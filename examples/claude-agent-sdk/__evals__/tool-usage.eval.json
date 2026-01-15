@@ -1,0 +1,15 @@
+{
+  "id": "read-file-tool",
+  "name": "Read File Tool Usage",
+  "description": "Verify agent can read files using the Read tool",
+  "category": "tool",
+  "prompt": "Read the package.json file and tell me the project name",
+  "expectedToolCalls": [
+    {
+      "toolName": "Read",
+      "minCalls": 1
+    }
+  ],
+  "judges": ["tool-invocation"],
+  "tags": ["tools", "file-ops"]
+}

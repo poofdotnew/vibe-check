@@ -1,0 +1,10 @@
+{
+  "id": "custom-judge-test",
+  "name": "Custom Judge Test",
+  "description": "Test using custom response-length and no-errors judges",
+  "category": "basic",
+  "prompt": "Provide a brief explanation of what TypeScript is",
+  "expectedBehavior": "Should provide a concise explanation within length limits",
+  "judges": ["response-length", "no-errors"],
+  "tags": ["custom-judge"]
+}

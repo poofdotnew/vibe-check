@@ -1,0 +1,22 @@
+{
+  "id": "iterative-code-refinement",
+  "name": "Iterative Code Refinement",
+  "description": "Test multi-turn conversation for code improvements",
+  "category": "multi-turn",
+  "turns": [
+    {
+      "prompt": "Create a simple add function in src/math.ts",
+      "expectedBehavior": "Should create a basic add function"
+    },
+    {
+      "prompt": "Add error handling for non-number inputs",
+      "expectedBehavior": "Should modify the function to validate inputs"
+    },
+    {
+      "prompt": "Add JSDoc comments to the function",
+      "expectedBehavior": "Should add documentation comments"
+    }
+  ],
+  "sessionPersistence": true,
+  "tags": ["multi-turn", "refactoring"]
+}

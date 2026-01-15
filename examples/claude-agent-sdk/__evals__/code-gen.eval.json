@@ -1,0 +1,20 @@
+{
+  "id": "create-typescript-file",
+  "name": "Create TypeScript File",
+  "description": "Verify agent can generate a TypeScript file with proper exports",
+  "category": "code-gen",
+  "prompt": "Create a file called src/utils.ts that exports a function called 'greet' that takes a name parameter and returns a greeting string",
+  "targetFiles": ["src/utils.ts"],
+  "expectedPatterns": [
+    {
+      "file": "src/utils.ts",
+      "patterns": [
+        "export\\s+(function|const)\\s+greet",
+        "name",
+        "string"
+      ]
+    }
+  ],
+  "judges": ["file-existence", "pattern-match"],
+  "tags": ["code-gen", "typescript"]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "vibe-check-basic-example",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "vibe-check run",
+    "test:list": "vibe-check list"
+  },
+  "dependencies": {
+    "@pooflabs/vibe-check": "workspace:*"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "id": "hello-world",
+  "name": "Hello World Test",
+  "description": "Basic test to verify the agent responds",
+  "category": "basic",
+  "prompt": "Say hello world",
+  "expectedBehavior": "Should respond with a greeting",
+  "judges": []
+}
