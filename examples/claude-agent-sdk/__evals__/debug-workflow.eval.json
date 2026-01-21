@@ -1,0 +1,10 @@
+{
+  "id": "debug-workflow",
+  "name": "Write File Workflow",
+  "description": "Test agent's ability to write a TypeScript file using the Write tool",
+  "category": "tool",
+  "prompt": "Use the Write tool to create a file called greet.ts with a function that returns 'Hello'",
+  "expectedToolCalls": [{ "toolName": "Write", "minCalls": 1 }],
+  "judges": ["tool-invocation"],
+  "tags": ["write", "typescript"]
+}

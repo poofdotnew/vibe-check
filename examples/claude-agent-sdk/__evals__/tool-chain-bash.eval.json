@@ -1,0 +1,10 @@
+{
+  "id": "tool-chain-bash",
+  "name": "Bash Command Workflow",
+  "description": "Test sequential Bash command execution for project operations",
+  "category": "tool",
+  "prompt": "Use Bash to check the current directory with pwd and list the files with ls",
+  "expectedToolCalls": [{ "toolName": "Bash", "minCalls": 1, "maxCalls": 5 }],
+  "judges": ["tool-invocation"],
+  "tags": ["tool-chain", "bash"]
+}

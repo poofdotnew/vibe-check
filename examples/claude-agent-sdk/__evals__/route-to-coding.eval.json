@@ -1,0 +1,10 @@
+{
+  "id": "route-to-coding",
+  "name": "Route to Coding Agent",
+  "description": "Verify coding tasks route to the coding subagent via Task tool",
+  "category": "routing",
+  "prompt": "Use the coding agent to write a function that calculates fibonacci numbers",
+  "expectedAgent": "coding",
+  "judges": ["agent-routing"],
+  "tags": ["routing", "coding", "subagent"]
+}

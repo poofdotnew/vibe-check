@@ -1,0 +1,11 @@
+{
+  "id": "route-intent-classification",
+  "name": "Subagent Task Invocation",
+  "description": "Verify Task tool is used to spawn a subagent",
+  "category": "tool",
+  "prompt": "Use the Task tool to spawn the research agent with a simple greeting task",
+  "timeout": 180000,
+  "expectedToolCalls": [{ "toolName": "Task", "minCalls": 1 }],
+  "judges": ["tool-invocation"],
+  "tags": ["routing", "subagent", "task-tool"]
+}

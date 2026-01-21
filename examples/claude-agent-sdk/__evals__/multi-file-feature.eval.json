@@ -1,0 +1,25 @@
+{
+  "id": "multi-file-feature",
+  "name": "Multi-File Feature Creation",
+  "description": "Test creating a complete feature with component, test, and types",
+  "category": "code-gen",
+  "prompt": "Create a Button component with: 1) src/Button.tsx - the React component, 2) src/Button.test.tsx - a test file, 3) src/Button.types.ts - TypeScript interface definitions",
+  "targetFiles": ["src/Button.tsx", "src/Button.test.tsx", "src/Button.types.ts"],
+  "expectedPatterns": [
+    {
+      "file": "src/Button.tsx",
+      "patterns": ["export", "Button", "React"]
+    },
+    {
+      "file": "src/Button.test.tsx",
+      "patterns": ["test", "Button", "expect"]
+    },
+    {
+      "file": "src/Button.types.ts",
+      "patterns": ["export", "interface", "ButtonProps"]
+    }
+  ],
+  "syntaxValidation": true,
+  "judges": ["file-existence", "pattern-match", "syntax-validation"],
+  "tags": ["code-gen", "multi-file", "react", "typescript"]
+}

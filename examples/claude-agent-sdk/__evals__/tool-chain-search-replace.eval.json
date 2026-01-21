@@ -1,0 +1,10 @@
+{
+  "id": "tool-chain-search-replace",
+  "name": "Search Workflow",
+  "description": "Test Grep tool usage for searching codebase",
+  "category": "tool",
+  "prompt": "Use Grep to search for any function definitions in the codebase",
+  "expectedToolCalls": [{ "toolName": "Grep", "minCalls": 1 }],
+  "judges": ["tool-invocation"],
+  "tags": ["tool-chain", "search"]
+}

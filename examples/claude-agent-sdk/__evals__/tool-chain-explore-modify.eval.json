@@ -1,0 +1,10 @@
+{
+  "id": "tool-chain-explore-modify",
+  "name": "Explore and Modify Workflow",
+  "description": "Test Glob tool usage for file exploration",
+  "category": "tool",
+  "prompt": "Use the Glob tool to find all .ts files in the current directory",
+  "expectedToolCalls": [{ "toolName": "Glob", "minCalls": 1 }],
+  "judges": ["tool-invocation"],
+  "tags": ["tool-chain", "multi-tool", "file-ops"]
+}

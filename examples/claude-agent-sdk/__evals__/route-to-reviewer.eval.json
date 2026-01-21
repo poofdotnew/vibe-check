@@ -1,0 +1,11 @@
+{
+  "id": "route-to-reviewer",
+  "name": "Route to Reviewer Agent",
+  "description": "Verify code review tasks route to the reviewer subagent via Task tool",
+  "category": "routing",
+  "prompt": "Use the reviewer agent to check this code: function foo() { return 1 }",
+  "expectedAgent": "reviewer",
+  "timeout": 180000,
+  "judges": ["agent-routing"],
+  "tags": ["routing", "review", "subagent"]
+}

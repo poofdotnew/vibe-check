@@ -1,0 +1,10 @@
+{
+  "id": "code-review",
+  "name": "Code Review via Reviewer Agent",
+  "description": "Test using the reviewer subagent to analyze code",
+  "category": "routing",
+  "prompt": "Use the reviewer agent to check this code for improvements:\n\nfunction add(a,b) { return a+b }",
+  "expectedAgent": "reviewer",
+  "judges": ["agent-routing"],
+  "tags": ["code-review", "routing", "subagent"]
+}

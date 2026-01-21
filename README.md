@@ -900,6 +900,27 @@ bun run vibe-check run
 
 **Use case**: Production Claude agents, comprehensive testing
 
+#### Eval Examples by Category and Judge
+
+| Eval File | Category | Judges Used |
+|-----------|----------|-------------|
+| basic.eval.json | basic | llm-code-quality |
+| code-gen.eval.json | code-gen | file-existence, pattern-match, syntax-validation |
+| tool-usage.eval.json | tool | tool-invocation |
+| multi-turn.eval.json | multi-turn | - |
+| route-to-coding.eval.json | routing | agent-routing |
+| route-to-research.eval.json | routing | agent-routing |
+| route-to-reviewer.eval.json | routing | agent-routing |
+| route-intent-classification.eval.json | tool | tool-invocation |
+| tool-chain-explore-modify.eval.json | tool | tool-invocation |
+| tool-chain-search-replace.eval.json | tool | tool-invocation |
+| tool-chain-bash.eval.json | tool | tool-invocation |
+| tool-chain-analysis.eval.json | tool | tool-invocation |
+| multi-file-feature.eval.json | code-gen | file-existence, pattern-match, syntax-validation |
+| skill-invocation.eval.json | tool | tool-invocation, skill-invocation |
+| code-review.eval.json | basic | llm-code-quality |
+| debug-workflow.eval.json | code-gen | file-existence, pattern-match, syntax-validation |
+
 ### 🎨 [Custom Judges](./examples/custom-judges)
 
 Advanced custom validation logic:

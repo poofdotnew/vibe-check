@@ -1,0 +1,13 @@
+{
+  "id": "tool-chain-analysis",
+  "name": "Multi-Tool Codebase Analysis",
+  "description": "Test comprehensive codebase analysis using multiple tools",
+  "category": "tool",
+  "prompt": "Analyze the project structure: find all source files, read the main entry point, and identify the exported functions",
+  "expectedToolCalls": [
+    { "toolName": "Glob", "minCalls": 1 },
+    { "toolName": "Read", "minCalls": 1 }
+  ],
+  "judges": ["tool-invocation"],
+  "tags": ["tool-chain", "multi-tool", "analysis"]
+}

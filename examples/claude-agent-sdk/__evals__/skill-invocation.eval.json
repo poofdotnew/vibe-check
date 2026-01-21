@@ -1,0 +1,11 @@
+{
+  "id": "skill-invocation-test",
+  "name": "Skill Invocation Test",
+  "description": "Verify the test skill is invoked when requested",
+  "category": "tool",
+  "prompt": "Use the /test skill to run the project tests",
+  "expectedToolCalls": [{ "toolName": "Skill", "minCalls": 1 }],
+  "expectedSkills": [{ "skillName": "test", "minCalls": 1 }],
+  "judges": ["tool-invocation", "skill-invocation"],
+  "tags": ["skills", "testing"]
+}
