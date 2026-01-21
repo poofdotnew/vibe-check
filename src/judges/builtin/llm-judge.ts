@@ -15,7 +15,7 @@ export interface LLMJudgeOptions {
   model?: string;
 }
 
-const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
+const DEFAULT_MODEL = 'claude-sonnet-4-5';
 const DEFAULT_RUBRICS_DIR = './__evals__/rubrics';
 
 export async function loadRubric(rubricPath: string, rubricsDir?: string): Promise<Rubric> {
@@ -73,9 +73,16 @@ export class LLMJudge extends BaseJudge {
       referenceFiles = await this.readReferenceFiles(referenceSolution, workingDirectory);
     }
 
-    const prompt = referenceFiles && referenceFiles.size > 0
-      ? this.buildPairwisePrompt(evalCase, executionResult, rubric, generatedFiles, referenceFiles)
-      : this.buildPrompt(evalCase, executionResult, rubric, generatedFiles);
+    const prompt =
+      referenceFiles && referenceFiles.size > 0
+        ? this.buildPairwisePrompt(
+            evalCase,
+            executionResult,
+            rubric,
+            generatedFiles,
+            referenceFiles
+          )
+        : this.buildPrompt(evalCase, executionResult, rubric, generatedFiles);
 
     try {
       const response = await this.anthropic.messages.create({
@@ -347,6 +354,6 @@ export function formatToolCallsSummary(toolCalls: any[] | undefined): string {
   }
 
   return Array.from(toolCounts.entries())
-    .map(([name, count]) => count > 1 ? `${name} (x${count})` : name)
+    .map(([name, count]) => (count > 1 ? `${name} (x${count})` : name))
     .join(', ');
 }
