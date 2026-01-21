@@ -38,6 +38,7 @@ export type {
   EvalCase,
   JudgeResult,
   EvalCaseResult,
+  ErrorType,
 } from './schemas.js';
 
 export {

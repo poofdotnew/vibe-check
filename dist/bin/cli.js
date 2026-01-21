@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import * as fs10 from 'fs/promises';
-import fs10__default from 'fs/promises';
-import * as path2 from 'path';
-import path2__default from 'path';
+import * as fs14 from 'fs/promises';
+import fs14__default from 'fs/promises';
+import * as path10 from 'path';
+import path10__default from 'path';
 import { glob } from 'glob';
 import { pathToFileURL, fileURLToPath } from 'url';
 import * as fsSync from 'fs';
@@ -13,8 +13,7 @@ import * as dotenv from 'dotenv';
 import { Command } from 'commander';
 import chalk from 'chalk';
 import * as os from 'os';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import Anthropic from '@anthropic-ai/sdk';
 
 var __defProp = Object.defineProperty;
 var __getOwnPropNames = Object.getOwnPropertyNames;
@@ -33,6 +32,9 @@ function isToolEval(evalCase) {
 }
 function isCodeGenEval(evalCase) {
   return evalCase.category === "code-gen";
+}
+function isRoutingEval(evalCase) {
+  return evalCase.category === "routing";
 }
 function isMultiTurnEval(evalCase) {
   return evalCase.category === "multi-turn";
@@ -137,12 +139,12 @@ __export(eval_loader_exports, {
 });
 async function loadEvalCases(options) {
   const { testDir, testMatch } = options;
-  const patterns = testMatch.map((pattern) => path2.join(testDir, pattern));
+  const patterns = testMatch.map((pattern) => path10.join(testDir, pattern));
   const files = await glob(patterns, { absolute: true });
   const evalCases = [];
   for (const file of files) {
     try {
-      const content = await fs10.readFile(file, "utf-8");
+      const content = await fs14.readFile(file, "utf-8");
       const data = JSON.parse(content);
       const evalCase = parseEvalCase(data);
       evalCases.push(evalCase);
@@ -227,10 +229,10 @@ var __filename$1, __dirname$1, LEARNING_DIR, RULES_DIR, EVAL_RESULTS_DIR, DEFAUL
 var init_config = __esm({
   "src/learning/config.ts"() {
     __filename$1 = fileURLToPath(import.meta.url);
-    __dirname$1 = path2__default.dirname(__filename$1);
-    LEARNING_DIR = path2__default.join(__dirname$1);
-    RULES_DIR = path2__default.join(LEARNING_DIR, "rules");
-    EVAL_RESULTS_DIR = path2__default.join(__dirname$1, "..", "results");
+    __dirname$1 = path10__default.dirname(__filename$1);
+    LEARNING_DIR = path10__default.join(__dirname$1);
+    RULES_DIR = path10__default.join(LEARNING_DIR, "rules");
+    EVAL_RESULTS_DIR = path10__default.join(__dirname$1, "..", "results");
     DEFAULT_LEARNING_CONFIG = {
       // Analysis settings
       minFailuresForPattern: 2,
@@ -247,13 +249,13 @@ var init_config = __esm({
       // 5% max regression
       // Directories
       learningDir: LEARNING_DIR,
-      promptsDir: path2__default.join(LEARNING_DIR, "prompts"),
+      promptsDir: path10__default.join(LEARNING_DIR, "prompts"),
       rulesDir: RULES_DIR,
-      pendingDir: path2__default.join(RULES_DIR, "pending"),
-      approvedDir: path2__default.join(RULES_DIR, "approved"),
-      rejectedDir: path2__default.join(RULES_DIR, "rejected"),
-      learnedRulesPath: path2__default.join(RULES_DIR, "learned-rules.json"),
-      historyPath: path2__default.join(RULES_DIR, "history.json"),
+      pendingDir: path10__default.join(RULES_DIR, "pending"),
+      approvedDir: path10__default.join(RULES_DIR, "approved"),
+      rejectedDir: path10__default.join(RULES_DIR, "rejected"),
+      learnedRulesPath: path10__default.join(RULES_DIR, "learned-rules.json"),
+      historyPath: path10__default.join(RULES_DIR, "history.json"),
       evalResultsDir: EVAL_RESULTS_DIR
     };
   }
@@ -322,7 +324,7 @@ var init_eval_source = __esm({
       }
       async isAvailable() {
         try {
-          await fs10__default.access(this.resultsDir);
+          await fs14__default.access(this.resultsDir);
           return true;
         } catch {
           return false;
@@ -333,18 +335,18 @@ var init_eval_source = __esm({
        */
       async getLatestResultsPath() {
         try {
-          const latestPath = path2__default.join(this.resultsDir, "latest.json");
+          const latestPath = path10__default.join(this.resultsDir, "latest.json");
           try {
-            await fs10__default.access(latestPath);
+            await fs14__default.access(latestPath);
             return latestPath;
           } catch {
           }
-          const files = await fs10__default.readdir(this.resultsDir);
+          const files = await fs14__default.readdir(this.resultsDir);
           const resultFiles = files.filter((f) => f.startsWith("eval-results-") && f.endsWith(".json")).sort().reverse();
           if (resultFiles.length === 0) {
             return null;
           }
-          return path2__default.join(this.resultsDir, resultFiles[0]);
+          return path10__default.join(this.resultsDir, resultFiles[0]);
         } catch {
           return null;
         }
@@ -354,7 +356,7 @@ var init_eval_source = __esm({
        */
       async readResults(filePath) {
         try {
-          const content = await fs10__default.readFile(filePath, "utf-8");
+          const content = await fs14__default.readFile(filePath, "utf-8");
           return JSON.parse(content);
         } catch {
           return null;
@@ -392,7 +394,7 @@ var init_eval_source = __esm({
        * Gets summary statistics about available results
        */
       async getStats() {
-        const files = await fs10__default.readdir(this.resultsDir).catch(() => []);
+        const files = await fs14__default.readdir(this.resultsDir).catch(() => []);
         const resultFiles = files.filter(
           (f) => f.startsWith("eval-results-") && f.endsWith(".json")
         );
@@ -412,16 +414,16 @@ var __filename2, __dirname2, JsonlDataSource;
 var init_jsonl_source = __esm({
   "src/learning/data-sources/jsonl-source.ts"() {
     __filename2 = fileURLToPath(import.meta.url);
-    __dirname2 = path2__default.dirname(__filename2);
+    __dirname2 = path10__default.dirname(__filename2);
     JsonlDataSource = class {
       name = "jsonl";
       promptRunsDir;
       constructor(promptRunsDir) {
-        this.promptRunsDir = promptRunsDir || path2__default.join(__dirname2, "..", "..", "..", "cdk", "dev-server-manager", "prompt-runs");
+        this.promptRunsDir = promptRunsDir || path10__default.join(__dirname2, "..", "..", "..", "cdk", "dev-server-manager", "prompt-runs");
       }
       async isAvailable() {
         try {
-          await fs10__default.access(this.promptRunsDir);
+          await fs14__default.access(this.promptRunsDir);
           const projects = await this.findProjectFolders();
           return projects.length > 0;
         } catch {
@@ -433,8 +435,8 @@ var init_jsonl_source = __esm({
        */
       async findProjectFolders() {
         try {
-          const entries = await fs10__default.readdir(this.promptRunsDir, { withFileTypes: true });
-          return entries.filter((e) => e.isDirectory() && e.name.startsWith("project-")).map((e) => path2__default.join(this.promptRunsDir, e.name));
+          const entries = await fs14__default.readdir(this.promptRunsDir, { withFileTypes: true });
+          return entries.filter((e) => e.isDirectory() && e.name.startsWith("project-")).map((e) => path10__default.join(this.promptRunsDir, e.name));
         } catch {
           return [];
         }
@@ -446,9 +448,9 @@ var init_jsonl_source = __esm({
         const jsonlFiles = [];
         const searchDir = async (dir) => {
           try {
-            const entries = await fs10__default.readdir(dir, { withFileTypes: true });
+            const entries = await fs14__default.readdir(dir, { withFileTypes: true });
             for (const entry of entries) {
-              const fullPath = path2__default.join(dir, entry.name);
+              const fullPath = path10__default.join(dir, entry.name);
               if (entry.isDirectory()) {
                 await searchDir(fullPath);
               } else if (entry.isFile() && entry.name.endsWith(".jsonl")) {
@@ -674,7 +676,7 @@ var init_jsonl_source = __esm({
           const jsonlFiles = await this.findJsonlFiles(projectDir);
           for (const filePath of jsonlFiles) {
             if (options?.since || options?.until) {
-              const stats = await fs10__default.stat(filePath);
+              const stats = await fs14__default.stat(filePath);
               if (options.since && stats.mtime < options.since) continue;
               if (options.until && stats.mtime > options.until) continue;
             }
@@ -799,6 +801,31 @@ var init_data_sources = __esm({
     init_jsonl_source();
   }
 });
+function parseExplanationResponse(text) {
+  const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+  const jsonContent = jsonMatch ? jsonMatch[1] : text;
+  try {
+    const parsed = JSON.parse(jsonContent.trim());
+    return {
+      whatWentWrong: parsed.whatWentWrong || "Unknown",
+      whyItFailed: parsed.whyItFailed || "Unknown",
+      rootCause: parsed.rootCause || "Unknown",
+      suggestedFix: parsed.suggestedFix || "No suggestion",
+      patternCategory: parsed.patternCategory || "other",
+      affectedComponent: parsed.affectedComponent,
+      confidence: Math.max(0, Math.min(1, parsed.confidence || 0.5))
+    };
+  } catch {
+    return {
+      whatWentWrong: "Failed to parse response",
+      whyItFailed: text.substring(0, 500),
+      rootCause: "Parse error",
+      suggestedFix: "Manual review required",
+      patternCategory: "other",
+      confidence: 0
+    };
+  }
+}
 var ExplanationGenerator;
 var init_explanation_generator = __esm({
   "src/learning/explanation-generator.ts"() {
@@ -813,8 +840,8 @@ var init_explanation_generator = __esm({
       }
       async getAnthropicClient() {
         if (!this.anthropic) {
-          const { default: Anthropic } = await import('@anthropic-ai/sdk');
-          this.anthropic = new Anthropic();
+          const { default: Anthropic2 } = await import('@anthropic-ai/sdk');
+          this.anthropic = new Anthropic2();
         }
         return this.anthropic;
       }
@@ -825,12 +852,12 @@ var init_explanation_generator = __esm({
         if (this.promptTemplate) {
           return this.promptTemplate;
         }
-        const promptPath = path2__default.join(
+        const promptPath = path10__default.join(
           this.config.promptsDir,
           "failure-analysis.md"
         );
         try {
-          this.promptTemplate = await fs10__default.readFile(promptPath, "utf-8");
+          this.promptTemplate = await fs14__default.readFile(promptPath, "utf-8");
           return this.promptTemplate;
         } catch (error) {
           throw new Error(
@@ -859,34 +886,8 @@ var init_explanation_generator = __esm({
         }
         return prompt;
       }
-      /**
-       * Parses the LLM response into a structured explanation
-       */
       parseResponse(text) {
-        const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
-        const jsonContent = jsonMatch ? jsonMatch[1] : text;
-        try {
-          const parsed = JSON.parse(jsonContent.trim());
-          return {
-            whatWentWrong: parsed.whatWentWrong || "Unknown",
-            whyItFailed: parsed.whyItFailed || "Unknown",
-            rootCause: parsed.rootCause || "Unknown",
-            suggestedFix: parsed.suggestedFix || "No suggestion",
-            patternCategory: parsed.patternCategory || "other",
-            affectedComponent: parsed.affectedComponent,
-            confidence: Math.max(0, Math.min(1, parsed.confidence || 0.5))
-          };
-        } catch (error) {
-          console.warn("Failed to parse LLM response:", text.substring(0, 200));
-          return {
-            whatWentWrong: "Failed to parse response",
-            whyItFailed: text.substring(0, 500),
-            rootCause: "Parse error",
-            suggestedFix: "Manual review required",
-            patternCategory: "other",
-            confidence: 0
-          };
-        }
+        return parseExplanationResponse(text);
       }
       /**
        * Generates an explanation for a single failure
@@ -1202,6 +1203,39 @@ var init_pattern_detector = __esm({
     };
   }
 });
+function parseRuleGenerationResponse(text, defaultTargetSection, fallbackEvalIds) {
+  const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+  const jsonContent = jsonMatch ? jsonMatch[1] : text;
+  try {
+    const parsed = JSON.parse(jsonContent.trim());
+    return {
+      rule: parsed.rule || "No rule generated",
+      targetSection: parsed.targetSection || defaultTargetSection,
+      placement: parsed.placement,
+      rationale: parsed.rationale || "No rationale provided",
+      expectedImpact: {
+        evalIds: parsed.expectedImpact?.evalIds || fallbackEvalIds,
+        confidenceScore: Math.max(
+          0,
+          Math.min(1, parsed.expectedImpact?.confidenceScore || 0.5)
+        )
+      }
+    };
+  } catch {
+    return {
+      rule: text.substring(0, 500),
+      targetSection: defaultTargetSection,
+      rationale: "Failed to parse structured response",
+      expectedImpact: {
+        evalIds: fallbackEvalIds,
+        confidenceScore: 0.3
+      }
+    };
+  }
+}
+function getTargetSectionForCategory(category) {
+  return CATEGORY_TO_SECTION[category] || CATEGORY_TO_SECTION["other"];
+}
 var CATEGORY_TO_SECTION, RuleGenerator;
 var init_rule_generator = __esm({
   "src/learning/rule-generator.ts"() {
@@ -1226,8 +1260,8 @@ var init_rule_generator = __esm({
       }
       async getAnthropicClient() {
         if (!this.anthropic) {
-          const { default: Anthropic } = await import('@anthropic-ai/sdk');
-          this.anthropic = new Anthropic();
+          const { default: Anthropic2 } = await import('@anthropic-ai/sdk');
+          this.anthropic = new Anthropic2();
         }
         return this.anthropic;
       }
@@ -1238,9 +1272,9 @@ var init_rule_generator = __esm({
         if (this.promptTemplate) {
           return this.promptTemplate;
         }
-        const promptPath = path2__default.join(this.config.promptsDir, "rule-generation.md");
+        const promptPath = path10__default.join(this.config.promptsDir, "rule-generation.md");
         try {
-          this.promptTemplate = await fs10__default.readFile(promptPath, "utf-8");
+          this.promptTemplate = await fs14__default.readFile(promptPath, "utf-8");
           return this.promptTemplate;
         } catch (error) {
           throw new Error(
@@ -1253,7 +1287,7 @@ var init_rule_generator = __esm({
        * (Reads a simplified version for context)
        */
       async loadCurrentInstructions() {
-        const templatePath = path2__default.join(
+        const templatePath = path10__default.join(
           this.config.learningDir,
           "..",
           "..",
@@ -1263,7 +1297,7 @@ var init_rule_generator = __esm({
           "prompt-templates.ts"
         );
         try {
-          const content = await fs10__default.readFile(templatePath, "utf-8");
+          const content = await fs14__default.readFile(templatePath, "utf-8");
           const sections = [
             "CORE_INSTRUCTIONS",
             "CHAT_PROMPT",
@@ -1288,11 +1322,8 @@ var init_rule_generator = __esm({
           console.warn("Could not load current instructions:", error);
         }
       }
-      /**
-       * Gets the target section for a pattern
-       */
       getTargetSection(pattern) {
-        return CATEGORY_TO_SECTION[pattern.category] || CATEGORY_TO_SECTION["other"];
+        return getTargetSectionForCategory(pattern.category);
       }
       /**
        * Builds the prompt for rule generation
@@ -1317,40 +1348,13 @@ var init_rule_generator = __esm({
         );
         return prompt;
       }
-      /**
-       * Parses the LLM response into a rule result
-       */
       parseResponse(text, pattern) {
-        const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
-        const jsonContent = jsonMatch ? jsonMatch[1] : text;
-        try {
-          const parsed = JSON.parse(jsonContent.trim());
-          const evalIds = pattern.failures.slice(0, 10).map((f) => f.failureInput.id);
-          return {
-            rule: parsed.rule || "No rule generated",
-            targetSection: parsed.targetSection || this.getTargetSection(pattern),
-            placement: parsed.placement,
-            rationale: parsed.rationale || "No rationale provided",
-            expectedImpact: {
-              evalIds: parsed.expectedImpact?.evalIds || evalIds,
-              confidenceScore: Math.max(
-                0,
-                Math.min(1, parsed.expectedImpact?.confidenceScore || 0.5)
-              )
-            }
-          };
-        } catch (error) {
-          console.warn("Failed to parse rule generation response:", text.substring(0, 200));
-          return {
-            rule: text.substring(0, 500),
-            targetSection: this.getTargetSection(pattern),
-            rationale: "Failed to parse structured response",
-            expectedImpact: {
-              evalIds: pattern.failures.slice(0, 5).map((f) => f.failureInput.id),
-              confidenceScore: 0.3
-            }
-          };
-        }
+        const fallbackEvalIds = pattern.failures.slice(0, 5).map((f) => f.failureInput.id);
+        return parseRuleGenerationResponse(
+          text,
+          this.getTargetSection(pattern),
+          fallbackEvalIds
+        );
       }
       /**
        * Generates a rule for a single pattern
@@ -1682,17 +1686,17 @@ var init_rule_writer = __esm({
        * Ensures rules directories exist
        */
       async ensureDirectories() {
-        await fs10__default.mkdir(this.config.rulesDir, { recursive: true });
-        await fs10__default.mkdir(this.config.pendingDir, { recursive: true });
-        await fs10__default.mkdir(this.config.approvedDir, { recursive: true });
-        await fs10__default.mkdir(this.config.rejectedDir, { recursive: true });
+        await fs14__default.mkdir(this.config.rulesDir, { recursive: true });
+        await fs14__default.mkdir(this.config.pendingDir, { recursive: true });
+        await fs14__default.mkdir(this.config.approvedDir, { recursive: true });
+        await fs14__default.mkdir(this.config.rejectedDir, { recursive: true });
       }
       /**
        * Reads the current learned rules file
        */
       async readLearnedRules() {
         try {
-          const content = await fs10__default.readFile(this.config.learnedRulesPath, "utf-8");
+          const content = await fs14__default.readFile(this.config.learnedRulesPath, "utf-8");
           return JSON.parse(content);
         } catch {
           return {
@@ -1708,7 +1712,7 @@ var init_rule_writer = __esm({
       async writeLearnedRules(rules) {
         await this.ensureDirectories();
         const content = JSON.stringify(rules, null, 2);
-        await fs10__default.writeFile(this.config.learnedRulesPath, content, "utf-8");
+        await fs14__default.writeFile(this.config.learnedRulesPath, content, "utf-8");
       }
       /**
        * Adds approved rules to the learned rules file
@@ -1737,8 +1741,8 @@ var init_rule_writer = __esm({
       async savePendingRule(rule) {
         await this.ensureDirectories();
         const filename = `${rule.ruleId}.json`;
-        const filepath = path2__default.join(this.config.pendingDir, filename);
-        await fs10__default.writeFile(filepath, JSON.stringify(rule, null, 2), "utf-8");
+        const filepath = path10__default.join(this.config.pendingDir, filename);
+        await fs14__default.writeFile(filepath, JSON.stringify(rule, null, 2), "utf-8");
         return filepath;
       }
       /**
@@ -1757,12 +1761,12 @@ var init_rule_writer = __esm({
        */
       async loadPendingRules() {
         try {
-          const files = await fs10__default.readdir(this.config.pendingDir);
+          const files = await fs14__default.readdir(this.config.pendingDir);
           const jsonFiles = files.filter((f) => f.endsWith(".json"));
           const rules = [];
           for (const file of jsonFiles) {
-            const filepath = path2__default.join(this.config.pendingDir, file);
-            const content = await fs10__default.readFile(filepath, "utf-8");
+            const filepath = path10__default.join(this.config.pendingDir, file);
+            const content = await fs14__default.readFile(filepath, "utf-8");
             rules.push(JSON.parse(content));
           }
           return rules;
@@ -1774,14 +1778,14 @@ var init_rule_writer = __esm({
        * Moves a pending rule to approved
        */
       async approvePendingRule(ruleId) {
-        const pendingPath = path2__default.join(this.config.pendingDir, `${ruleId}.json`);
-        const approvedPath = path2__default.join(this.config.approvedDir, `${ruleId}.json`);
+        const pendingPath = path10__default.join(this.config.pendingDir, `${ruleId}.json`);
+        const approvedPath = path10__default.join(this.config.approvedDir, `${ruleId}.json`);
         try {
-          const content = await fs10__default.readFile(pendingPath, "utf-8");
+          const content = await fs14__default.readFile(pendingPath, "utf-8");
           const rule = JSON.parse(content);
           rule.status = "approved";
-          await fs10__default.writeFile(approvedPath, JSON.stringify(rule, null, 2), "utf-8");
-          await fs10__default.unlink(pendingPath);
+          await fs14__default.writeFile(approvedPath, JSON.stringify(rule, null, 2), "utf-8");
+          await fs14__default.unlink(pendingPath);
           await this.addApprovedRules([rule], `manual-${Date.now()}`);
         } catch (error) {
           throw new Error(`Failed to approve rule ${ruleId}: ${error}`);
@@ -1791,15 +1795,15 @@ var init_rule_writer = __esm({
        * Moves a pending rule to rejected
        */
       async rejectPendingRule(ruleId, reason) {
-        const pendingPath = path2__default.join(this.config.pendingDir, `${ruleId}.json`);
-        const rejectedPath = path2__default.join(this.config.rejectedDir, `${ruleId}.json`);
+        const pendingPath = path10__default.join(this.config.pendingDir, `${ruleId}.json`);
+        const rejectedPath = path10__default.join(this.config.rejectedDir, `${ruleId}.json`);
         try {
-          const content = await fs10__default.readFile(pendingPath, "utf-8");
+          const content = await fs14__default.readFile(pendingPath, "utf-8");
           const rule = JSON.parse(content);
           rule.status = "rejected";
           rule.reviewNotes = reason;
-          await fs10__default.writeFile(rejectedPath, JSON.stringify(rule, null, 2), "utf-8");
-          await fs10__default.unlink(pendingPath);
+          await fs14__default.writeFile(rejectedPath, JSON.stringify(rule, null, 2), "utf-8");
+          await fs14__default.unlink(pendingPath);
         } catch (error) {
           throw new Error(`Failed to reject rule ${ruleId}: ${error}`);
         }
@@ -1809,9 +1813,9 @@ var init_rule_writer = __esm({
        */
       async clearPendingRules() {
         try {
-          const files = await fs10__default.readdir(this.config.pendingDir);
+          const files = await fs14__default.readdir(this.config.pendingDir);
           for (const file of files) {
-            await fs10__default.unlink(path2__default.join(this.config.pendingDir, file));
+            await fs14__default.unlink(path10__default.join(this.config.pendingDir, file));
           }
           return files.length;
         } catch {
@@ -1823,7 +1827,7 @@ var init_rule_writer = __esm({
        */
       async readHistory() {
         try {
-          const content = await fs10__default.readFile(this.config.historyPath, "utf-8");
+          const content = await fs14__default.readFile(this.config.historyPath, "utf-8");
           return JSON.parse(content);
         } catch {
           return {
@@ -1840,7 +1844,7 @@ var init_rule_writer = __esm({
        */
       async writeHistory(history) {
         await this.ensureDirectories();
-        await fs10__default.writeFile(
+        await fs14__default.writeFile(
           this.config.historyPath,
           JSON.stringify(history, null, 2),
           "utf-8"
@@ -1868,11 +1872,11 @@ var init_rule_writer = __esm({
         let approvedCount = 0;
         let rejectedCount = 0;
         try {
-          approvedCount = (await fs10__default.readdir(this.config.approvedDir)).length;
+          approvedCount = (await fs14__default.readdir(this.config.approvedDir)).length;
         } catch {
         }
         try {
-          rejectedCount = (await fs10__default.readdir(this.config.rejectedDir)).length;
+          rejectedCount = (await fs14__default.readdir(this.config.rejectedDir)).length;
         } catch {
         }
         return {
@@ -2234,12 +2238,12 @@ async function loadConfig(configPath) {
   const cwd = process.cwd();
   let configFile;
   if (configPath) {
-    configFile = path2.isAbsolute(configPath) ? configPath : path2.join(cwd, configPath);
+    configFile = path10.isAbsolute(configPath) ? configPath : path10.join(cwd, configPath);
   } else {
     for (const name of CONFIG_FILE_NAMES) {
-      const candidate = path2.join(cwd, name);
+      const candidate = path10.join(cwd, name);
       try {
-        await fs10.access(candidate);
+        await fs14.access(candidate);
         configFile = candidate;
         break;
       } catch {
@@ -2291,8 +2295,9 @@ function resolveConfig(userConfig) {
     rubricsDir: userConfig.rubricsDir ?? defaultConfig.rubricsDir,
     outputDir: userConfig.outputDir ?? defaultConfig.outputDir,
     verbose: userConfig.verbose ?? defaultConfig.verbose,
-    workspaceTemplate: userConfig.workspaceTemplate,
     preserveWorkspaces: userConfig.preserveWorkspaces ?? defaultConfig.preserveWorkspaces,
+    createWorkspace: userConfig.createWorkspace,
+    cleanupWorkspace: userConfig.cleanupWorkspace,
     learning: {
       enabled: userConfig.learning?.enabled ?? defaultConfig.learning.enabled,
       ruleOutputDir: userConfig.learning?.ruleOutputDir ?? defaultConfig.learning.ruleOutputDir,
@@ -2350,129 +2355,24 @@ function agentResultToExecutionResult(result) {
     usage: result.usage
   };
 }
-var execAsync = promisify(exec);
-var SKIP_PATTERNS = ["node_modules", ".bun", "bun.lock", "dist", ".git", ".next", "coverage"];
-function getWorkspaceBaseDir() {
-  const cwd = process.cwd();
-  const evalsResultsDir = path2.join(cwd, "__evals__", "results", "workspaces");
-  try {
-    fsSync.mkdirSync(evalsResultsDir, { recursive: true });
-    const testFile = path2.join(evalsResultsDir, ".write-test");
-    fsSync.writeFileSync(testFile, "");
-    fsSync.unlinkSync(testFile);
-    return evalsResultsDir;
-  } catch {
-    const tmpDir = fsSync.realpathSync(os.tmpdir());
-    return path2.join(tmpDir, "vibe-check-evals");
-  }
-}
-var WorkspaceManager = class {
-  workspaces = /* @__PURE__ */ new Map();
-  baseDir;
-  constructor(baseDir) {
-    this.baseDir = baseDir ?? getWorkspaceBaseDir();
-  }
-  async createWorkspace(template) {
-    const id = `ws-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-    const workspacePath = path2.join(this.baseDir, id);
-    await fs10.mkdir(workspacePath, { recursive: true });
-    if (template) {
-      console.log(`[WorkspaceManager] Copying template from: ${template}`);
-      try {
-        await this.copyTemplate(template, workspacePath);
-        console.log(`[WorkspaceManager] Template copied successfully to: ${workspacePath}`);
-        await this.installDependencies(workspacePath);
-        console.log(`[WorkspaceManager] Dependencies installed`);
-      } catch (error) {
-        console.error(`[WorkspaceManager] Failed to copy template from ${template}:`, error);
-        await this.createMinimalStructure(workspacePath);
-      }
-    } else {
-      console.log(`[WorkspaceManager] No template provided, creating minimal structure`);
-      await this.createMinimalStructure(workspacePath);
-    }
-    const workspace = {
-      id,
-      path: workspacePath,
-      createdAt: /* @__PURE__ */ new Date()
-    };
-    this.workspaces.set(id, workspace);
-    return workspace;
-  }
-  async installDependencies(workspacePath) {
-    try {
-      const packageJsonPath = path2.join(workspacePath, "package.json");
-      await fs10.access(packageJsonPath);
-      await execAsync("bun install", { cwd: workspacePath });
-    } catch {
-    }
-  }
-  async createMinimalStructure(workspacePath) {
-    await fs10.mkdir(path2.join(workspacePath, "src"), { recursive: true });
-    await fs10.writeFile(
-      path2.join(workspacePath, "package.json"),
-      JSON.stringify({ name: "eval-workspace", version: "1.0.0", type: "module" }, null, 2)
-    );
-  }
-  async copyTemplate(templatePath, workspacePath) {
-    const resolvedTemplate = path2.isAbsolute(templatePath) ? templatePath : path2.join(process.cwd(), templatePath);
-    try {
-      await fs10.access(resolvedTemplate);
-    } catch {
-      throw new Error(`Template not found at: ${resolvedTemplate}`);
-    }
-    await this.copyDir(resolvedTemplate, workspacePath, SKIP_PATTERNS);
-  }
-  async copyDir(src, dest, skipPatterns = []) {
-    await fs10.mkdir(dest, { recursive: true });
-    const entries = await fs10.readdir(src, { withFileTypes: true });
-    for (const entry of entries) {
-      if (skipPatterns.some((pattern) => entry.name === pattern)) {
-        continue;
-      }
-      const srcPath = path2.join(src, entry.name);
-      const destPath = path2.join(dest, entry.name);
-      if (entry.isDirectory()) {
-        await this.copyDir(srcPath, destPath, skipPatterns);
-      } else {
-        await fs10.copyFile(srcPath, destPath);
-      }
-    }
-  }
-  async cleanupWorkspace(id) {
-    const workspace = this.workspaces.get(id);
-    if (workspace) {
-      try {
-        await fs10.rm(workspace.path, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
-      } catch (error) {
-        console.warn(`Warning: Could not fully cleanup workspace ${id}:`, error.message);
-      }
-      this.workspaces.delete(id);
-    }
-  }
-  async cleanupAll() {
-    for (const id of this.workspaces.keys()) {
-      await this.cleanupWorkspace(id);
-    }
-  }
-  getWorkspace(id) {
-    return this.workspaces.get(id);
-  }
-  listWorkspaces() {
-    return Array.from(this.workspaces.values());
-  }
-};
 
 // src/harness/test-harness.ts
 var TestHarness = class {
   config;
-  workspaceManager;
+  workspaces = /* @__PURE__ */ new Map();
   constructor(options) {
     this.config = options.config;
-    this.workspaceManager = options.workspaceManager ?? new WorkspaceManager();
+  }
+  verbose(message) {
+    if (this.config.verbose) {
+      console.log(message);
+    }
   }
   async execute(evalCase) {
-    const workspace = await this.workspaceManager.createWorkspace(this.config.workspaceTemplate);
+    this.verbose(`[${evalCase.id}] Starting: ${evalCase.name}`);
+    const workspace = this.config.createWorkspace ? await this.config.createWorkspace() : await this.createDefaultWorkspace();
+    this.workspaces.set(workspace.id, workspace);
+    this.verbose(`[${evalCase.id}] Workspace: ${workspace.id}`);
     try {
       const context = {
         workingDirectory: workspace.path,
@@ -2482,24 +2382,49 @@ var TestHarness = class {
       };
       const prompt = this.getPrompt(evalCase);
       const startTime = Date.now();
+      this.verbose(`[${evalCase.id}] Executing agent...`);
       const result = await this.executeWithTimeout(
         this.config.agent,
         prompt,
         context,
         context.timeout
       );
+      if (this.config.agentType === "claude-code") {
+        const jsonlToolCalls = await this.extractToolCallsFromJsonl(workspace.path);
+        if (jsonlToolCalls.length > 0) {
+          this.verbose(`[${evalCase.id}] Found ${jsonlToolCalls.length} tool calls from JSONL`);
+          result.toolCalls = result.toolCalls || [];
+          for (const call of jsonlToolCalls) {
+            if (!result.toolCalls.some((t) => t.toolName === call.toolName)) {
+              result.toolCalls.push(call);
+            }
+          }
+        }
+      }
       const executionResult = agentResultToExecutionResult(result);
       executionResult.duration = result.duration ?? Date.now() - startTime;
       executionResult.workingDirectory = workspace.path;
+      this.verbose(`[${evalCase.id}] Completed (${result.success ? "success" : "failed"}) in ${executionResult.duration}ms`);
+      executionResult.workspaceId = workspace.id;
       return executionResult;
-    } finally {
-      if (!this.config.preserveWorkspaces) {
-        await this.workspaceManager.cleanupWorkspace(workspace.id);
+    } catch (error) {
+      let jsonlToolCalls = [];
+      if (this.config.agentType === "claude-code") {
+        jsonlToolCalls = await this.extractToolCallsFromJsonl(workspace.path);
       }
+      if (this.config.cleanupWorkspace || !this.config.preserveWorkspaces) {
+        await this.cleanupWorkspaceById(workspace.id);
+      }
+      const executionError = error;
+      executionError.toolCalls = jsonlToolCalls;
+      throw executionError;
     }
   }
   async executeMultiTurn(evalCase) {
-    const workspace = await this.workspaceManager.createWorkspace(this.config.workspaceTemplate);
+    this.verbose(`[${evalCase.id}] Starting multi-turn: ${evalCase.name} (${evalCase.turns.length} turns)`);
+    const workspace = this.config.createWorkspace ? await this.config.createWorkspace() : await this.createDefaultWorkspace();
+    this.workspaces.set(workspace.id, workspace);
+    this.verbose(`[${evalCase.id}] Workspace: ${workspace.id}`);
     const results = [];
     let sessionId;
     try {
@@ -2513,23 +2438,48 @@ var TestHarness = class {
           sessionId
         };
         const startTime = Date.now();
+        this.verbose(`[${evalCase.id}] Executing turn ${i + 1}/${evalCase.turns.length}...`);
         const result = await this.executeWithTimeout(
           this.config.agent,
           turn.prompt,
           context,
           context.timeout
         );
+        if (this.config.agentType === "claude-code") {
+          const jsonlToolCalls = await this.extractToolCallsFromJsonl(workspace.path);
+          if (jsonlToolCalls.length > 0) {
+            this.verbose(`[${evalCase.id}] Found ${jsonlToolCalls.length} tool calls from JSONL`);
+            result.toolCalls = result.toolCalls || [];
+            for (const call of jsonlToolCalls) {
+              if (!result.toolCalls.some((t) => t.toolName === call.toolName)) {
+                result.toolCalls.push(call);
+              }
+            }
+          }
+        }
         const executionResult = agentResultToExecutionResult(result);
         executionResult.duration = result.duration ?? Date.now() - startTime;
         executionResult.workingDirectory = workspace.path;
+        this.verbose(`[${evalCase.id}] Turn ${i + 1} completed (${result.success ? "success" : "failed"}) in ${executionResult.duration}ms`);
         results.push(executionResult);
         sessionId = result.sessionId;
       }
-      return results;
-    } finally {
-      if (!this.config.preserveWorkspaces) {
-        await this.workspaceManager.cleanupWorkspace(workspace.id);
+      this.verbose(`[${evalCase.id}] Multi-turn completed`);
+      if (results.length > 0) {
+        results[results.length - 1].workspaceId = workspace.id;
       }
+      return results;
+    } catch (error) {
+      let jsonlToolCalls = [];
+      if (this.config.agentType === "claude-code") {
+        jsonlToolCalls = await this.extractToolCallsFromJsonl(workspace.path);
+      }
+      if (this.config.cleanupWorkspace || !this.config.preserveWorkspaces) {
+        await this.cleanupWorkspaceById(workspace.id);
+      }
+      const executionError = error;
+      executionError.toolCalls = jsonlToolCalls;
+      throw executionError;
     }
   }
   getPrompt(evalCase) {
@@ -2557,9 +2507,130 @@ var TestHarness = class {
     });
   }
   async cleanup() {
-    if (!this.config.preserveWorkspaces) {
-      await this.workspaceManager.cleanupAll();
+    if (this.config.cleanupWorkspace || !this.config.preserveWorkspaces) {
+      for (const id of this.workspaces.keys()) {
+        await this.cleanupWorkspaceById(id);
+      }
     }
+  }
+  async cleanupWorkspace(workspaceId) {
+    if (this.config.cleanupWorkspace || !this.config.preserveWorkspaces) {
+      await this.cleanupWorkspaceById(workspaceId);
+    }
+  }
+  async createDefaultWorkspace() {
+    const id = `ws-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+    const baseDir = this.getWorkspaceBaseDir();
+    const workspacePath = path10.join(baseDir, id);
+    await fs14.mkdir(workspacePath, { recursive: true });
+    await fs14.mkdir(path10.join(workspacePath, "src"), { recursive: true });
+    await fs14.writeFile(
+      path10.join(workspacePath, "package.json"),
+      JSON.stringify({ name: "eval-workspace", version: "1.0.0", type: "module" }, null, 2)
+    );
+    return { id, path: workspacePath };
+  }
+  getWorkspaceBaseDir() {
+    const cwd = process.cwd();
+    const evalsResultsDir = path10.join(cwd, "__evals__", "results", "workspaces");
+    try {
+      fsSync.mkdirSync(evalsResultsDir, { recursive: true });
+      const testFile = path10.join(evalsResultsDir, ".write-test");
+      fsSync.writeFileSync(testFile, "");
+      fsSync.unlinkSync(testFile);
+      return evalsResultsDir;
+    } catch {
+      const tmpDir = fsSync.realpathSync(os.tmpdir());
+      return path10.join(tmpDir, "vibe-check-evals");
+    }
+  }
+  async cleanupWorkspaceById(id) {
+    const workspace = this.workspaces.get(id);
+    if (workspace) {
+      this.verbose(`Cleaning up workspace: ${id}`);
+      if (this.config.cleanupWorkspace) {
+        await this.config.cleanupWorkspace(workspace);
+      } else {
+        try {
+          await fs14.rm(workspace.path, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+        } catch {
+        }
+      }
+      this.workspaces.delete(id);
+    }
+  }
+  async extractToolCallsFromJsonl(workspacePath) {
+    const toolCalls = [];
+    const toolUseMap = /* @__PURE__ */ new Map();
+    try {
+      const claudeDir = path10.join(workspacePath, ".claude", "projects");
+      try {
+        await fs14.access(claudeDir);
+      } catch {
+        return toolCalls;
+      }
+      const projectDirs = await fs14.readdir(claudeDir);
+      for (const projectDir of projectDirs) {
+        const projectPath = path10.join(claudeDir, projectDir);
+        const stat4 = await fs14.stat(projectPath);
+        if (!stat4.isDirectory()) continue;
+        const files = await fs14.readdir(projectPath);
+        const jsonlFiles = files.filter((f) => f.endsWith(".jsonl"));
+        for (const jsonlFile of jsonlFiles) {
+          const filePath = path10.join(projectPath, jsonlFile);
+          const content = await fs14.readFile(filePath, "utf-8");
+          const lines = content.split("\n").filter((line) => line.trim());
+          for (const line of lines) {
+            try {
+              const entry = JSON.parse(line);
+              const message = entry.message;
+              if (!message?.content || !Array.isArray(message.content)) continue;
+              for (const block of message.content) {
+                if (block.type === "tool_use" && typeof block.name === "string" && block.id) {
+                  toolUseMap.set(block.id, { name: block.name, input: block.input || {} });
+                }
+              }
+            } catch {
+            }
+          }
+          for (const line of lines) {
+            try {
+              const entry = JSON.parse(line);
+              const message = entry.message;
+              if (!message?.content || !Array.isArray(message.content)) continue;
+              for (const block of message.content) {
+                if (block.type === "tool_result" && block.tool_use_id) {
+                  const toolUse = toolUseMap.get(block.tool_use_id);
+                  if (toolUse) {
+                    const output = typeof block.content === "string" ? block.content : JSON.stringify(block.content);
+                    if (!toolCalls.some((t) => t.toolName === toolUse.name && JSON.stringify(t.input) === JSON.stringify(toolUse.input))) {
+                      toolCalls.push({
+                        toolName: toolUse.name,
+                        input: toolUse.input,
+                        output,
+                        isError: block.is_error
+                      });
+                    }
+                    toolUseMap.delete(block.tool_use_id);
+                  }
+                }
+              }
+            } catch {
+            }
+          }
+          for (const [, toolUse] of toolUseMap) {
+            if (!toolCalls.some((t) => t.toolName === toolUse.name && JSON.stringify(t.input) === JSON.stringify(toolUse.input))) {
+              toolCalls.push({
+                toolName: toolUse.name,
+                input: toolUse.input
+              });
+            }
+          }
+        }
+      }
+    } catch {
+    }
+    return toolCalls;
   }
 };
 init_schemas();
@@ -2579,9 +2650,9 @@ var FileExistenceJudge = class extends BaseJudge {
     const baseDir = workingDirectory || process.cwd();
     const results = [];
     for (const file of targetFiles) {
-      const fullPath = path2.join(baseDir, file);
+      const fullPath = path10.join(baseDir, file);
       try {
-        await fs10.access(fullPath);
+        await fs14.access(fullPath);
         results.push({ file, exists: true });
       } catch {
         results.push({ file, exists: false });
@@ -2679,10 +2750,10 @@ var PatternMatchJudge = class extends BaseJudge {
     const baseDir = workingDirectory || process.cwd();
     const results = [];
     for (const { file, patterns } of expectedPatterns) {
-      const fullPath = path2.join(baseDir, file);
+      const fullPath = path10.join(baseDir, file);
       let content = "";
       try {
-        content = await fs10.readFile(fullPath, "utf-8");
+        content = await fs14.readFile(fullPath, "utf-8");
       } catch {
         results.push({
           file,
@@ -2721,6 +2792,606 @@ var PatternMatchJudge = class extends BaseJudge {
     });
   }
 };
+init_schemas();
+var DEFAULT_WORK_TYPE_KEYWORDS = {};
+var AgentRoutingJudge = class extends BaseJudge {
+  id = "agent-routing";
+  name = "Agent Routing Judge";
+  type = "code";
+  workTypeKeywords;
+  constructor(options = {}) {
+    super();
+    this.workTypeKeywords = options.workTypeKeywords || DEFAULT_WORK_TYPE_KEYWORDS;
+  }
+  async evaluate(context) {
+    const { executionResult, evalCase, workingDirectory } = context;
+    if (!isRoutingEval(evalCase)) {
+      return this.notApplicable("Only applicable for routing evals");
+    }
+    const taskCalls = executionResult.toolCalls.filter(
+      (call) => call.toolName === "Task" || call.toolName.includes("task")
+    );
+    let agentsInvoked = taskCalls.map((call) => {
+      const input = call.input;
+      return input?.agent || input?.subagent_type || "unknown";
+    }).filter((agent) => agent !== "unknown");
+    const jsonlAgents = await this.extractAgentsFromJsonl(workingDirectory);
+    agentsInvoked = [.../* @__PURE__ */ new Set([...agentsInvoked, ...jsonlAgents])];
+    const expectedAgent = evalCase.expectedAgent;
+    const invokedExpected = agentsInvoked.includes(expectedAgent);
+    const forbiddenAgents = evalCase.shouldNotRoute || [];
+    const invokedForbidden = forbiddenAgents.filter((a) => agentsInvoked.includes(a));
+    const output = executionResult.output || "";
+    const outputLower = output.toLowerCase();
+    const hasDelegationIntent = this.checkDelegationIntent(outputLower, expectedAgent, forbiddenAgents);
+    let score;
+    let passed;
+    let reasoning;
+    if (invokedExpected && invokedForbidden.length === 0) {
+      score = 100;
+      passed = true;
+      reasoning = `Correctly routed to ${expectedAgent}`;
+    } else if (invokedExpected && invokedForbidden.length > 0) {
+      score = 50;
+      passed = false;
+      reasoning = `Routed to ${expectedAgent} but also incorrectly routed to: ${invokedForbidden.join(", ")}`;
+    } else if (hasDelegationIntent.toExpected && !hasDelegationIntent.toForbidden) {
+      score = 80;
+      passed = true;
+      reasoning = `AI indicated delegation intent to ${expectedAgent} (no actual Task tool invocation detected)`;
+    } else if (hasDelegationIntent.toExpected && hasDelegationIntent.toForbidden) {
+      score = 40;
+      passed = false;
+      reasoning = `AI mentioned ${expectedAgent} but also mentioned forbidden agents`;
+    } else if (hasDelegationIntent.performedRightWork) {
+      score = 70;
+      passed = true;
+      reasoning = `AI performed ${expectedAgent}-appropriate work directly (no delegation, but correct work type)`;
+    } else if (agentsInvoked.length === 0) {
+      score = 0;
+      passed = false;
+      reasoning = `Expected ${expectedAgent} but no agent was invoked and no delegation intent detected. The main agent may have handled the task directly.`;
+    } else {
+      score = 0;
+      passed = false;
+      reasoning = `Expected ${expectedAgent} but got: ${agentsInvoked.join(", ")}`;
+    }
+    return this.createResult({
+      passed,
+      score,
+      reasoning,
+      details: {
+        agentsInvoked,
+        expectedAgent,
+        invokedForbidden,
+        taskCallCount: taskCalls.length,
+        jsonlAgentsFound: jsonlAgents,
+        delegationIntentDetected: hasDelegationIntent.toExpected,
+        performedRightWork: hasDelegationIntent.performedRightWork
+      }
+    });
+  }
+  async extractAgentsFromJsonl(workspacePath) {
+    const agents = [];
+    try {
+      const claudeDir = path10.join(workspacePath, ".claude", "projects");
+      try {
+        await fs14.access(claudeDir);
+      } catch {
+        return agents;
+      }
+      const projectDirs = await fs14.readdir(claudeDir);
+      for (const projectDir of projectDirs) {
+        const projectPath = path10.join(claudeDir, projectDir);
+        const stat4 = await fs14.stat(projectPath);
+        if (!stat4.isDirectory()) continue;
+        const files = await fs14.readdir(projectPath);
+        const jsonlFiles = files.filter((f) => f.endsWith(".jsonl"));
+        for (const jsonlFile of jsonlFiles) {
+          const filePath = path10.join(projectPath, jsonlFile);
+          const content = await fs14.readFile(filePath, "utf-8");
+          const lines = content.split("\n").filter((line) => line.trim());
+          for (const line of lines) {
+            try {
+              const entry = JSON.parse(line);
+              const message = entry.message;
+              if (!message?.content || !Array.isArray(message.content)) continue;
+              for (const block of message.content) {
+                if (block.type === "tool_use" && block.name === "Task") {
+                  const input = block.input;
+                  const agentType = input?.subagent_type || input?.agent;
+                  if (agentType && !agents.includes(agentType)) {
+                    agents.push(agentType);
+                  }
+                }
+              }
+            } catch {
+            }
+          }
+        }
+      }
+    } catch {
+    }
+    return agents;
+  }
+  checkDelegationIntent(outputLower, expectedAgent, forbiddenAgents) {
+    const delegationKeywords = [
+      "delegate",
+      "task tool",
+      "subagent",
+      "agent",
+      "specialized",
+      "use the",
+      "invoke",
+      "call the"
+    ];
+    const expectedAgentLower = expectedAgent.toLowerCase();
+    const mentionsExpected = outputLower.includes(expectedAgentLower);
+    const hasDelegationContext = delegationKeywords.some((kw) => outputLower.includes(kw));
+    const toExpected = mentionsExpected && hasDelegationContext;
+    const toForbidden = forbiddenAgents.some((agent) => {
+      const agentLower = agent.toLowerCase();
+      return outputLower.includes(agentLower) && hasDelegationContext;
+    });
+    const performedRightWork = this.checkWorkType(outputLower, expectedAgent);
+    return { toExpected, toForbidden, performedRightWork };
+  }
+  checkWorkType(outputLower, expectedAgent) {
+    const keywords = this.workTypeKeywords[expectedAgent] || [];
+    if (keywords.length === 0) return false;
+    const matchCount = keywords.filter((kw) => outputLower.includes(kw)).length;
+    return matchCount >= 2;
+  }
+};
+init_schemas();
+var SkillInvocationJudge = class extends BaseJudge {
+  id = "skill-invocation";
+  name = "Skill Invocation Judge";
+  type = "code";
+  async evaluate(context) {
+    const { evalCase, executionResult, workingDirectory } = context;
+    if (!isToolEval(evalCase)) {
+      return this.notApplicable("Only applicable for tool evals");
+    }
+    const expectedSkills = evalCase.expectedSkills || [];
+    if (expectedSkills.length === 0) {
+      return this.notApplicable("No expected skills specified");
+    }
+    const jsonlSkillCalls = await this.extractSkillCallsFromJsonl(workingDirectory);
+    const mainAgentSkillCalls = this.extractSkillCallsFromToolCalls(executionResult.toolCalls || []);
+    const skillCalls = [...jsonlSkillCalls, ...mainAgentSkillCalls];
+    const results = [];
+    for (const expected of expectedSkills) {
+      const matchCount = skillCalls.filter(
+        (call) => call.skillName === expected.skillName
+      ).length;
+      const meetsMin = matchCount >= (expected.minCalls ?? 1);
+      results.push({
+        skillName: expected.skillName,
+        found: matchCount > 0,
+        callCount: matchCount,
+        meetsMin
+      });
+    }
+    const passedCount = results.filter((r) => r.found && r.meetsMin).length;
+    const score = passedCount / expectedSkills.length * 100;
+    const passed = score >= 80;
+    const failedChecks = results.filter((r) => !r.found || !r.meetsMin);
+    const allSkillNames = Array.from(new Set(skillCalls.map((c) => c.skillName)));
+    return this.createResult({
+      passed,
+      score,
+      reasoning: failedChecks.length > 0 ? `${passedCount}/${expectedSkills.length} expected skills invoked. Failed: ${failedChecks.map((f) => `${f.skillName} (found ${f.callCount}x)`).join(", ")}` : `All ${expectedSkills.length} expected skills were invoked`,
+      details: {
+        results,
+        actualSkillNames: allSkillNames,
+        totalSkillCalls: skillCalls.length
+      }
+    });
+  }
+  extractSkillCallsFromToolCalls(toolCalls) {
+    const skillCalls = [];
+    for (const call of toolCalls) {
+      if (call.toolName === "Skill") {
+        const input = call.input;
+        const skillName = input?.skill || input?.command;
+        if (skillName) {
+          skillCalls.push({
+            skillName: skillName.replace(/^\//, ""),
+            input: input || {}
+          });
+        }
+      }
+    }
+    return skillCalls;
+  }
+  async extractSkillCallsFromJsonl(workspacePath) {
+    const skillCalls = [];
+    try {
+      const claudeDir = path10.join(workspacePath, ".claude", "projects");
+      try {
+        await fs14.access(claudeDir);
+      } catch {
+        return skillCalls;
+      }
+      const projectDirs = await fs14.readdir(claudeDir);
+      for (const projectDir of projectDirs) {
+        const projectPath = path10.join(claudeDir, projectDir);
+        const stat4 = await fs14.stat(projectPath);
+        if (!stat4.isDirectory()) continue;
+        const files = await fs14.readdir(projectPath);
+        const jsonlFiles = files.filter((f) => f.endsWith(".jsonl"));
+        for (const jsonlFile of jsonlFiles) {
+          const filePath = path10.join(projectPath, jsonlFile);
+          const content = await fs14.readFile(filePath, "utf-8");
+          const lines = content.split("\n").filter((line) => line.trim());
+          for (const line of lines) {
+            try {
+              const entry = JSON.parse(line);
+              const message = entry.message;
+              if (!message?.content || !Array.isArray(message.content)) continue;
+              for (const block of message.content) {
+                if (block.type === "tool_use" && block.name === "Skill") {
+                  const input = block.input;
+                  const skillName = input?.skill || input?.command;
+                  if (skillName) {
+                    skillCalls.push({
+                      skillName: skillName.replace(/^\//, ""),
+                      input: input || {}
+                    });
+                  }
+                }
+              }
+            } catch {
+            }
+          }
+        }
+      }
+    } catch {
+    }
+    return skillCalls;
+  }
+};
+init_schemas();
+var SyntaxValidationJudge = class extends BaseJudge {
+  id = "syntax-validation";
+  name = "Syntax Validation Judge";
+  type = "code";
+  async evaluate(context) {
+    const { executionResult, evalCase, workingDirectory } = context;
+    if (!isCodeGenEval(evalCase)) {
+      return this.notApplicable("Only applicable for code-gen evals");
+    }
+    if (!evalCase.syntaxValidation) {
+      return this.notApplicable("Syntax validation disabled for this eval");
+    }
+    const targetFiles = evalCase.targetFiles || [];
+    const codeFiles = targetFiles.filter(
+      (f) => f.endsWith(".ts") || f.endsWith(".tsx") || f.endsWith(".js") || f.endsWith(".jsx")
+    );
+    if (codeFiles.length === 0) {
+      return this.notApplicable("No code files to validate");
+    }
+    const results = [];
+    for (const file of codeFiles) {
+      const fullPath = path10.join(workingDirectory || executionResult.workingDirectory || "", file);
+      try {
+        const content = await fs14.readFile(fullPath, "utf-8");
+        const isValid = await this.validateSyntax(content, file);
+        results.push({ file, valid: isValid.valid, error: isValid.error });
+      } catch (error) {
+        results.push({
+          file,
+          valid: false,
+          error: error instanceof Error ? error.message : "File not found"
+        });
+      }
+    }
+    const validCount = results.filter((r) => r.valid).length;
+    const score = validCount / codeFiles.length * 100;
+    const passed = score >= 90;
+    const invalidFiles = results.filter((r) => !r.valid);
+    return this.createResult({
+      passed,
+      score,
+      reasoning: invalidFiles.length > 0 ? `${validCount}/${codeFiles.length} files have valid syntax. Invalid: ${invalidFiles.map((f) => `${f.file} (${f.error})`).join(", ")}` : `All ${codeFiles.length} files have valid syntax`,
+      details: { results }
+    });
+  }
+  async validateSyntax(content, filename) {
+    try {
+      const { parse } = await import('@babel/parser');
+      const isTypeScript = filename.endsWith(".ts") || filename.endsWith(".tsx");
+      const isJSX = filename.endsWith(".tsx") || filename.endsWith(".jsx");
+      const plugins = [];
+      if (isTypeScript) plugins.push("typescript");
+      if (isJSX) plugins.push("jsx");
+      parse(content, {
+        sourceType: "module",
+        plugins
+      });
+      return { valid: true };
+    } catch (error) {
+      return {
+        valid: false,
+        error: error instanceof Error ? error.message : "Parse error"
+      };
+    }
+  }
+};
+var DEFAULT_MODEL = "claude-sonnet-4-20250514";
+var DEFAULT_RUBRICS_DIR = "./__evals__/rubrics";
+async function loadRubric(rubricPath, rubricsDir) {
+  const baseDir = rubricsDir || DEFAULT_RUBRICS_DIR;
+  const fullPath = path10.isAbsolute(rubricPath) ? rubricPath : path10.join(process.cwd(), baseDir, rubricPath);
+  const content = await fs14.readFile(fullPath, "utf-8");
+  const id = path10.basename(rubricPath, path10.extname(rubricPath));
+  return { id, content };
+}
+var LLMJudge = class extends BaseJudge {
+  id;
+  name;
+  type = "llm";
+  rubricPath;
+  anthropic;
+  rubricsDir;
+  model;
+  constructor(id, rubricPath, options = {}) {
+    super();
+    this.id = id;
+    this.name = `LLM Judge: ${id}`;
+    this.rubricPath = rubricPath;
+    this.rubricsDir = options.rubricsDir || DEFAULT_RUBRICS_DIR;
+    this.model = options.model || DEFAULT_MODEL;
+    this.anthropic = new Anthropic();
+  }
+  async evaluate(context) {
+    const { evalCase, executionResult, workingDirectory } = context;
+    let rubric;
+    try {
+      rubric = await loadRubric(this.rubricPath, this.rubricsDir);
+    } catch (error) {
+      return this.createResult({
+        passed: false,
+        score: 0,
+        reasoning: `Failed to load rubric: ${error instanceof Error ? error.message : "Unknown error"}`,
+        confidence: 0
+      });
+    }
+    const generatedFiles = await this.readTargetFiles(evalCase, workingDirectory);
+    const referenceSolution = evalCase.referenceSolution;
+    let referenceFiles;
+    if (referenceSolution) {
+      referenceFiles = await this.readReferenceFiles(referenceSolution, workingDirectory);
+    }
+    const prompt = referenceFiles && referenceFiles.size > 0 ? this.buildPairwisePrompt(evalCase, executionResult, rubric, generatedFiles, referenceFiles) : this.buildPrompt(evalCase, executionResult, rubric, generatedFiles);
+    try {
+      const response = await this.anthropic.messages.create({
+        model: this.model,
+        max_tokens: 1024,
+        messages: [{ role: "user", content: prompt }]
+      });
+      const content = response.content[0];
+      if (content.type !== "text") {
+        throw new Error("Unexpected response type from LLM");
+      }
+      return this.parseResponse(content.text);
+    } catch (error) {
+      return this.createResult({
+        passed: false,
+        score: 0,
+        reasoning: `LLM evaluation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        confidence: 0
+      });
+    }
+  }
+  async readReferenceFiles(referenceSolution, workingDirectory) {
+    const files = /* @__PURE__ */ new Map();
+    if (referenceSolution.code) {
+      files.set("reference_code", referenceSolution.code);
+    }
+    if (referenceSolution.files && referenceSolution.files.length > 0) {
+      for (const filePath of referenceSolution.files) {
+        const fullPath = path10.isAbsolute(filePath) ? filePath : path10.join(workingDirectory, filePath);
+        try {
+          const content = await fs14.readFile(fullPath, "utf-8");
+          files.set(filePath, content);
+        } catch {
+          files.set(filePath, "[REFERENCE FILE NOT FOUND]");
+        }
+      }
+    }
+    return files;
+  }
+  buildPairwisePrompt(evalCase, result, rubric, generatedFiles, referenceFiles) {
+    const toolCallSummary = this.formatToolCalls(result.toolCalls);
+    let generatedFilesSection = "";
+    if (generatedFiles && generatedFiles.size > 0) {
+      const fileContents = Array.from(generatedFiles.entries()).map(([filePath, content]) => `### ${filePath}
+\`\`\`
+${content}
+\`\`\``).join("\n\n");
+      generatedFilesSection = `
+## Generated Output (Candidate)
+${fileContents}
+`;
+    }
+    let referenceFilesSection = "";
+    if (referenceFiles && referenceFiles.size > 0) {
+      const fileContents = Array.from(referenceFiles.entries()).map(([filePath, content]) => `### ${filePath}
+\`\`\`
+${content}
+\`\`\``).join("\n\n");
+      referenceFilesSection = `
+## Reference Solution (Gold Standard)
+${fileContents}
+`;
+    }
+    return `You are an AI evaluation judge performing PAIRWISE COMPARISON. Compare the candidate output against the reference solution.
+
+## Evaluation Case
+ID: ${evalCase.id}
+Name: ${evalCase.name}
+Description: ${evalCase.description}
+Category: ${evalCase.category}
+Original Prompt: ${evalCase.prompt || "N/A"}
+Expected Behavior: ${evalCase.expectedBehavior || "N/A"}
+
+## Rubric
+${rubric.content}
+${referenceFilesSection}
+${generatedFilesSection}
+## Execution Result
+Success: ${result.success}
+AI Response: ${result.output || "N/A"}
+Duration: ${result.duration}ms
+Tool Calls: ${toolCallSummary}
+Error: ${result.error?.message || "None"}
+
+## Pairwise Comparison Instructions
+1. Compare the candidate output against the reference solution
+2. Evaluate how closely the candidate matches the reference in terms of:
+   - Functional correctness
+   - Code quality and style
+   - Completeness of implementation
+3. Award scores based on how well the candidate achieves the same goals as the reference
+4. A candidate that fully matches or exceeds the reference should score 90-100
+5. Output your evaluation in the following JSON format:
+
+\`\`\`json
+{
+  "score": <number 0-100>,
+  "passed": <boolean - true if score >= 70>,
+  "confidence": <number 0-1 indicating how confident you are in this evaluation>,
+  "reasoning": "<your detailed reasoning comparing candidate to reference, 2-4 sentences>"
+}
+\`\`\`
+
+Output only the JSON block, no other text.`;
+  }
+  async readTargetFiles(evalCase, workingDirectory) {
+    const files = /* @__PURE__ */ new Map();
+    const targetFiles = evalCase.targetFiles;
+    if (!targetFiles || targetFiles.length === 0) {
+      return files;
+    }
+    for (const filePath of targetFiles) {
+      const fullPath = path10.join(workingDirectory, filePath);
+      try {
+        const content = await fs14.readFile(fullPath, "utf-8");
+        files.set(filePath, content);
+      } catch {
+        files.set(filePath, "[FILE NOT FOUND]");
+      }
+    }
+    return files;
+  }
+  buildPrompt(evalCase, result, rubric, generatedFiles) {
+    const toolCallSummary = this.formatToolCalls(result.toolCalls);
+    let generatedFilesSection = "";
+    if (generatedFiles && generatedFiles.size > 0) {
+      const fileContents = Array.from(generatedFiles.entries()).map(([filePath, content]) => `### ${filePath}
+\`\`\`
+${content}
+\`\`\``).join("\n\n");
+      generatedFilesSection = `
+## Generated Files
+${fileContents}
+`;
+    }
+    return `You are an AI evaluation judge. Evaluate the following AI execution result against the rubric.
+
+## Evaluation Case
+ID: ${evalCase.id}
+Name: ${evalCase.name}
+Description: ${evalCase.description}
+Category: ${evalCase.category}
+Original Prompt: ${evalCase.prompt || "N/A"}
+Expected Behavior: ${evalCase.expectedBehavior || "N/A"}
+
+## Rubric
+${rubric.content}
+
+## Execution Result
+Success: ${result.success}
+AI Response: ${result.output || "N/A"}
+Duration: ${result.duration}ms
+Tool Calls: ${toolCallSummary}
+Error: ${result.error?.message || "None"}
+${generatedFilesSection}
+## Instructions
+1. Carefully evaluate the result against each criterion in the rubric
+2. Consider both what the AI did correctly and what it failed to do
+3. For code-gen evals, focus on the Generated Files section to evaluate the actual code quality
+4. Provide a score from 0-100 based on the rubric criteria
+5. Be specific in your reasoning - cite specific behaviors observed
+6. Output your evaluation in the following JSON format:
+
+\`\`\`json
+{
+  "score": <number 0-100>,
+  "passed": <boolean - true if score >= 70>,
+  "confidence": <number 0-1 indicating how confident you are in this evaluation>,
+  "reasoning": "<your detailed reasoning, 2-4 sentences>"
+}
+\`\`\`
+
+Output only the JSON block, no other text.`;
+  }
+  parseResponse(text) {
+    const parsed = parseLLMJudgeResponse(text);
+    return this.createResult(parsed);
+  }
+  formatToolCalls(toolCalls) {
+    return formatToolCallsSummary(toolCalls);
+  }
+};
+function createLLMCodeQualityJudge(options = {}) {
+  return new LLMJudge("llm-code-quality", "code-quality.md", options);
+}
+function createLLMRoutingQualityJudge(options = {}) {
+  return new LLMJudge("llm-routing-quality", "routing-quality.md", options);
+}
+function createLLMResponseQualityJudge(options = {}) {
+  return new LLMJudge("llm-response-quality", "response-quality.md", options);
+}
+function createLLMConversationQualityJudge(options = {}) {
+  return new LLMJudge("llm-conversation-quality", "conversation-quality.md", options);
+}
+function parseLLMJudgeResponse(text) {
+  const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+  const jsonContent = jsonMatch ? jsonMatch[1] : text;
+  try {
+    const parsed = JSON.parse(jsonContent.trim());
+    return {
+      passed: parsed.passed ?? parsed.score >= 70,
+      score: Math.max(0, Math.min(100, parsed.score || 0)),
+      confidence: Math.max(0, Math.min(1, parsed.confidence || 0.5)),
+      reasoning: parsed.reasoning || "No reasoning provided"
+    };
+  } catch {
+    return {
+      passed: false,
+      score: 0,
+      reasoning: `Failed to parse LLM response: ${text.substring(0, 200)}...`,
+      confidence: 0
+    };
+  }
+}
+function formatToolCallsSummary(toolCalls) {
+  if (!toolCalls || toolCalls.length === 0) {
+    return "None";
+  }
+  if (toolCalls.length <= 10) {
+    return toolCalls.map((t) => t.toolName).join(", ");
+  }
+  const toolCounts = /* @__PURE__ */ new Map();
+  for (const call of toolCalls) {
+    const name = call.toolName || "unknown";
+    toolCounts.set(name, (toolCounts.get(name) || 0) + 1);
+  }
+  return Array.from(toolCounts.entries()).map(([name, count]) => count > 1 ? `${name} (x${count})` : name).join(", ");
+}
 
 // src/judges/judge-registry.ts
 var JudgeRegistry = class {
@@ -2732,10 +3403,18 @@ var JudgeRegistry = class {
     this.register(new FileExistenceJudge());
     this.register(new ToolInvocationJudge());
     this.register(new PatternMatchJudge());
+    this.register(new AgentRoutingJudge());
+    this.register(new SkillInvocationJudge());
+    this.register(new SyntaxValidationJudge());
+    this.register(createLLMCodeQualityJudge());
+    this.register(createLLMRoutingQualityJudge());
+    this.register(createLLMResponseQualityJudge());
+    this.register(createLLMConversationQualityJudge());
   }
   register(judge) {
     this.judges.set(judge.id, judge);
   }
+  /** @internal Used for testing only */
   unregister(id) {
     return this.judges.delete(id);
   }
@@ -2748,9 +3427,11 @@ var JudgeRegistry = class {
   list() {
     return Array.from(this.judges.keys());
   }
+  /** @internal Used for testing only */
   listByType(type) {
     return Array.from(this.judges.entries()).filter(([_, judge]) => judge.type === type).map(([id]) => id);
   }
+  /** @internal Used for testing only */
   getAll() {
     return Array.from(this.judges.values());
   }
@@ -2771,13 +3452,28 @@ var EvalRunner = class {
   constructor(config3) {
     this.config = config3;
     this.harness = new TestHarness({ config: config3 });
+    if (config3.judges && config3.judges.length > 0) {
+      const registry = getJudgeRegistry();
+      for (const judge of config3.judges) {
+        registry.register(judge);
+      }
+    }
+  }
+  verbose(message) {
+    if (this.config.verbose) {
+      console.log(message);
+    }
   }
   async run(options = {}) {
     const startTime = Date.now();
     const runId = `run-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    this.verbose(`Starting eval run: ${runId}`);
     if (this.config.setup) {
+      this.verbose(`Running setup hook...`);
       await this.config.setup();
+      this.verbose(`Setup complete`);
     }
+    this.verbose(`Loading eval cases from: ${this.config.testDir}`);
     const evalCases = await loadEvalCases({
       testDir: this.config.testDir,
       testMatch: this.config.testMatch,
@@ -2786,9 +3482,9 @@ var EvalRunner = class {
       ids: options.ids,
       enabledOnly: true
     });
-    if (this.config.verbose) {
-      console.log(`Found ${evalCases.length} eval cases to run`);
-    }
+    const mode = this.config.parallel ? `parallel (${this.config.maxConcurrency} concurrent)` : "sequential";
+    console.log(`Running ${evalCases.length} evals (${mode})...`);
+    console.log();
     const results = [];
     if (this.config.parallel && evalCases.length > 1) {
       results.push(...await this.runParallel(evalCases));
@@ -2796,12 +3492,16 @@ var EvalRunner = class {
       results.push(...await this.runSequential(evalCases));
     }
     if (this.config.teardown) {
+      this.verbose(`Running teardown hook...`);
       await this.config.teardown();
     }
     await this.harness.cleanup();
     const passed = results.filter((r) => r.success).length;
     const failed = results.filter((r) => !r.success && !r.error).length;
     const errors = results.filter((r) => r.error).length;
+    const duration = Date.now() - startTime;
+    console.log();
+    console.log(`Completed: ${passed}/${results.length} passed (${Math.round(passed / results.length * 100)}%) in ${(duration / 1e3).toFixed(1)}s`);
     return {
       runId,
       total: results.length,
@@ -2811,25 +3511,47 @@ var EvalRunner = class {
       errors,
       passRate: results.length > 0 ? passed / results.length : 0,
       results,
-      duration: Date.now() - startTime,
+      duration,
       timestamp: (/* @__PURE__ */ new Date()).toISOString()
     };
   }
   async runParallel(evalCases) {
-    const results = [];
+    const results = new Array(evalCases.length);
     const { maxConcurrency } = this.config;
-    for (let i = 0; i < evalCases.length; i += maxConcurrency) {
-      const batch = evalCases.slice(i, i + maxConcurrency);
-      const batchResults = await Promise.all(
-        batch.map((evalCase) => this.runSingle(evalCase))
-      );
-      results.push(...batchResults);
-    }
-    return results;
+    let nextIndex = 0;
+    return new Promise((resolve) => {
+      const runNext = async () => {
+        while (nextIndex < evalCases.length) {
+          const currentIndex = nextIndex++;
+          const evalCase = evalCases[currentIndex];
+          console.log(`[${evalCase.id}] Starting (${currentIndex + 1}/${evalCases.length})`);
+          try {
+            const result = await this.runSingle(evalCase);
+            results[currentIndex] = result;
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            results[currentIndex] = {
+              evalCase,
+              success: false,
+              output: "",
+              duration: 0,
+              judgeResults: [],
+              error: error instanceof Error ? error : new Error(errorMessage),
+              errorType: this.classifyError(error)
+            };
+          } finally {
+          }
+        }
+      };
+      const workers = Array(Math.min(maxConcurrency, evalCases.length)).fill(null).map(() => runNext());
+      Promise.all(workers).then(() => resolve(results));
+    });
   }
   async runSequential(evalCases) {
     const results = [];
-    for (const evalCase of evalCases) {
+    for (let i = 0; i < evalCases.length; i++) {
+      const evalCase = evalCases[i];
+      console.log(`[${evalCase.id}] Starting (${i + 1}/${evalCases.length})`);
       const result = await this.runSingle(evalCase);
       results.push(result);
     }
@@ -2842,7 +3564,13 @@ var EvalRunner = class {
     }
     let result;
     try {
-      result = await this.runWithRetries(evalCase);
+      const trialConfig = evalCase.trials || { count: this.config.trials, passThreshold: this.config.trialPassThreshold };
+      const trialCount = trialConfig.count ?? 1;
+      if (trialCount > 1) {
+        result = await this.runWithTrials(evalCase, trialCount, trialConfig.passThreshold ?? 0.5);
+      } else {
+        result = await this.runWithRetries(evalCase);
+      }
     } catch (error) {
       result = {
         evalCase,
@@ -2850,35 +3578,90 @@ var EvalRunner = class {
         output: "",
         duration: Date.now() - startTime,
         judgeResults: [],
-        error: error instanceof Error ? error : new Error(String(error))
+        error: error instanceof Error ? error : new Error(String(error)),
+        errorType: this.classifyError(error)
       };
     }
     if (this.config.afterEach) {
       await this.config.afterEach(result);
     }
-    if (this.config.verbose) {
-      const status = result.success ? "\u2713" : "\u2717";
-      console.log(`${status} ${evalCase.name} (${result.duration}ms)`);
-    }
+    const status = result.success ? "\u2713" : "\u2717";
+    const trialInfo = result.trialResults ? ` [${result.trialResults.filter((t) => t).length}/${result.trialResults.length} trials]` : "";
+    const retryInfo = result.retryCount ? ` (${result.retryCount} retries)` : "";
+    console.log(`[${evalCase.id}] ${status} ${(result.duration / 1e3).toFixed(1)}s${trialInfo}${retryInfo}`);
     return result;
+  }
+  async runWithTrials(evalCase, trialCount, passThreshold) {
+    const trialResults = [];
+    let lastResult;
+    let totalDuration = 0;
+    for (let trial = 0; trial < trialCount; trial++) {
+      this.verbose(`[${evalCase.id}] Trial ${trial + 1}/${trialCount}...`);
+      try {
+        const result = await this.runWithRetries(evalCase);
+        trialResults.push(result.success);
+        totalDuration += result.duration;
+        lastResult = result;
+        this.verbose(`[${evalCase.id}] Trial ${trial + 1} ${result.success ? "passed" : "failed"}`);
+      } catch (error) {
+        trialResults.push(false);
+        lastResult = {
+          evalCase,
+          success: false,
+          output: "",
+          duration: 0,
+          judgeResults: [],
+          error: error instanceof Error ? error : new Error(String(error)),
+          errorType: this.classifyError(error)
+        };
+        this.verbose(`[${evalCase.id}] Trial ${trial + 1} errored: ${error.message}`);
+      }
+    }
+    const passCount = trialResults.filter((t) => t).length;
+    const passRate = passCount / trialCount;
+    const overallSuccess = passRate >= passThreshold;
+    this.verbose(`[${evalCase.id}] Trials complete: ${passCount}/${trialCount} passed (${(passRate * 100).toFixed(0)}%)`);
+    return {
+      ...lastResult,
+      success: overallSuccess,
+      trialResults,
+      duration: totalDuration
+    };
   }
   async runWithRetries(evalCase) {
     let lastError;
+    let lastErrorType;
     let retryCount = 0;
+    const retryErrors = [];
     for (let attempt = 0; attempt <= this.config.maxRetries; attempt++) {
+      const isRetry = attempt > 0;
       try {
         const result = await this.executeAndJudge(evalCase);
-        if (result.success || attempt === this.config.maxRetries) {
-          return { ...result, retryCount };
+        if (result.success) {
+          return {
+            ...result,
+            retryCount,
+            flaky: isRetry,
+            retryErrors: isRetry ? retryErrors : void 0
+          };
         }
+        if (attempt === this.config.maxRetries) {
+          return { ...result, retryCount, retryErrors: retryErrors.length > 0 ? retryErrors : void 0 };
+        }
+        const failReason = result.errorType || "judge failure";
+        retryErrors.push(`Attempt ${attempt + 1}: ${failReason}`);
         retryCount++;
-        const delay = this.config.retryDelayMs * Math.pow(this.config.retryBackoffMultiplier, attempt);
+        const delay = this.getRetryDelay(attempt, result.errorType);
+        this.verbose(`[${evalCase.id}] Attempt ${attempt + 1} failed (${failReason}), retrying in ${delay}ms... (${retryCount}/${this.config.maxRetries})`);
         await this.sleep(delay);
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
+        lastErrorType = this.classifyError(error);
+        retryErrors.push(`Attempt ${attempt + 1}: ${lastErrorType} - ${lastError.message.substring(0, 100)}`);
         retryCount++;
         if (attempt < this.config.maxRetries) {
-          const delay = this.config.retryDelayMs * Math.pow(this.config.retryBackoffMultiplier, attempt);
+          const delay = this.getRetryDelay(attempt, lastErrorType);
+          this.verbose(`[${evalCase.id}] Attempt ${attempt + 1} errored (${lastErrorType}): ${lastError.message}, retrying in ${delay}ms...`);
           await this.sleep(delay);
         }
       }
@@ -2890,20 +3673,63 @@ var EvalRunner = class {
       duration: 0,
       judgeResults: [],
       error: lastError,
-      retryCount
+      errorType: lastErrorType,
+      retryCount,
+      flaky: false,
+      retryErrors: retryErrors.length > 0 ? retryErrors : void 0
     };
+  }
+  getRetryDelay(attempt, errorType) {
+    const baseDelay = this.config.retryDelayMs;
+    const multiplier = this.config.retryBackoffMultiplier;
+    let delay = baseDelay * Math.pow(multiplier, attempt);
+    if (errorType === "api") {
+      delay *= 3;
+    } else if (errorType === "timeout") {
+      delay *= 1.5;
+    }
+    return delay;
+  }
+  classifyError(error, output) {
+    if (!error) return "unknown";
+    const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+    const combinedText = output ? `${errorMessage} ${output.toLowerCase()}` : errorMessage;
+    if (errorMessage.includes("timeout") || errorMessage.includes("timed out")) {
+      return "timeout";
+    }
+    if (combinedText.includes("api") || combinedText.includes("rate limit") || combinedText.includes("429") || combinedText.includes("529") || combinedText.includes("500") || combinedText.includes("502") || combinedText.includes("503") || combinedText.includes("overloaded") || combinedText.includes("api error")) {
+      return "api";
+    }
+    if (errorMessage.includes("judge")) {
+      return "judge";
+    }
+    return "unknown";
   }
   async executeAndJudge(evalCase) {
     let executionResult;
     let turnResults;
+    let judgeResults;
     if (isMultiTurnEval(evalCase)) {
       turnResults = await this.harness.executeMultiTurn(evalCase);
       executionResult = turnResults[turnResults.length - 1];
+      judgeResults = await this.runJudgesForMultiTurn(evalCase, turnResults);
     } else {
       executionResult = await this.harness.execute(evalCase);
+      judgeResults = await this.runJudgesParallel(evalCase, executionResult);
     }
-    const judgeResults = await this.runJudges(evalCase, executionResult);
     const allPassed = judgeResults.every((r) => r.passed);
+    if (this.config.verbose && judgeResults.length > 0) {
+      for (const result of judgeResults) {
+        const status = result.passed ? "\u2713" : "\u2717";
+        this.verbose(`[${evalCase.id}] Judge ${result.judgeId}: ${status} (score: ${result.score})`);
+        if (!result.passed && result.reasoning) {
+          this.verbose(`[${evalCase.id}]   \u2514\u2500 ${result.reasoning}`);
+        }
+      }
+    }
+    if (executionResult.workspaceId) {
+      await this.harness.cleanupWorkspace(executionResult.workspaceId);
+    }
     return {
       evalCase,
       success: executionResult.success && allPassed,
@@ -2911,40 +3737,119 @@ var EvalRunner = class {
       duration: executionResult.duration,
       judgeResults,
       toolCalls: executionResult.toolCalls,
-      error: executionResult.error
+      error: executionResult.error,
+      errorType: executionResult.error ? this.classifyError(executionResult.error, executionResult.output) : void 0
     };
   }
-  async runJudges(evalCase, executionResult) {
+  async runJudgesParallel(evalCase, executionResult, maxRetries = 2) {
     const judgeIds = this.getJudgeIds(evalCase);
     const registry = getJudgeRegistry();
-    const results = [];
-    for (const judgeId of judgeIds) {
+    const judgePromises = judgeIds.map(async (judgeId) => {
       const judge = registry.get(judgeId);
       if (!judge) {
-        if (this.config.verbose) {
-          console.warn(`Judge not found: ${judgeId}`);
-        }
-        continue;
+        this.verbose(`[${evalCase.id}] Warning: Judge not found: ${judgeId}`);
+        return null;
       }
-      const context = {
-        evalCase,
-        executionResult,
-        workingDirectory: executionResult.workingDirectory || ""
-      };
-      try {
-        const result = await judge.evaluate(context);
-        results.push(result);
-      } catch (error) {
-        results.push({
-          judgeId,
-          passed: false,
-          score: 0,
-          confidence: 1,
-          reasoning: `Judge error: ${error instanceof Error ? error.message : String(error)}`
-        });
+      return this.evaluateJudgeWithRetry(
+        judge,
+        {
+          evalCase,
+          executionResult,
+          workingDirectory: executionResult.workingDirectory || ""
+        },
+        maxRetries,
+        judgeId
+      );
+    });
+    const results = await Promise.all(judgePromises);
+    return results.filter((r) => r !== null);
+  }
+  async runJudgesForMultiTurn(evalCase, turnResults, maxRetries = 2) {
+    const registry = getJudgeRegistry();
+    const allJudgePromises = [];
+    for (let i = 0; i < evalCase.turns.length; i++) {
+      const turn = evalCase.turns[i];
+      const turnResult = turnResults[i];
+      const turnJudgeIds = turn.judges || [];
+      for (const judgeId of turnJudgeIds) {
+        const turnIndex = i;
+        allJudgePromises.push(
+          (async () => {
+            const judge = registry.get(judgeId);
+            if (!judge) {
+              this.verbose(`[${evalCase.id}] Warning: Judge not found: ${judgeId}`);
+              return null;
+            }
+            return this.evaluateJudgeWithRetry(
+              judge,
+              {
+                evalCase,
+                executionResult: turnResult,
+                workingDirectory: turnResult.workingDirectory || "",
+                turnIndex
+              },
+              maxRetries,
+              `${judgeId}[turn-${turnIndex + 1}]`
+            );
+          })()
+        );
       }
     }
-    return results;
+    const globalJudgeIds = evalCase.judges || [];
+    const lastResult = turnResults[turnResults.length - 1];
+    for (const judgeId of globalJudgeIds) {
+      allJudgePromises.push(
+        (async () => {
+          const judge = registry.get(judgeId);
+          if (!judge) {
+            this.verbose(`[${evalCase.id}] Warning: Judge not found: ${judgeId}`);
+            return null;
+          }
+          return this.evaluateJudgeWithRetry(
+            judge,
+            {
+              evalCase,
+              executionResult: lastResult,
+              workingDirectory: lastResult.workingDirectory || ""
+            },
+            maxRetries,
+            judgeId
+          );
+        })()
+      );
+    }
+    const results = await Promise.all(allJudgePromises);
+    return results.filter((r) => r !== null);
+  }
+  async evaluateJudgeWithRetry(judge, context, maxRetries, judgeIdOverride) {
+    const judgeId = judgeIdOverride || judge.id;
+    let lastError;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await judge.evaluate(context);
+        if (attempt > 0) {
+          this.verbose(`[${context.evalCase.id}] Judge ${judgeId} succeeded on attempt ${attempt + 1}`);
+        }
+        if (judgeIdOverride) {
+          return { ...result, judgeId: judgeIdOverride };
+        }
+        return result;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        if (attempt < maxRetries) {
+          const delay = 500 * (attempt + 1);
+          this.verbose(`[${context.evalCase.id}] Judge ${judgeId} failed (attempt ${attempt + 1}), retrying in ${delay}ms...`);
+          await this.sleep(delay);
+        }
+      }
+    }
+    return {
+      judgeId,
+      passed: false,
+      score: 0,
+      confidence: 1,
+      reasoning: `Judge error after ${maxRetries + 1} attempts: ${lastError?.message || "Unknown"}`
+    };
   }
   getJudgeIds(evalCase) {
     if ("judges" in evalCase && evalCase.judges) {
@@ -3013,8 +3918,8 @@ program.command("list").description("List all eval cases").option("-c, --config 
   }
 });
 program.command("init").description("Initialize vibe-check in current project").option("--typescript", "Create TypeScript config (default)").action(async () => {
-  const fs11 = await import('fs/promises');
-  const path12 = await import('path');
+  const fs15 = await import('fs/promises');
+  const path16 = await import('path');
   const configContent = `import { defineConfig } from '@pooflabs/vibe-check';
 
 // TODO: Import your AI agent SDK
@@ -3048,10 +3953,10 @@ export default defineConfig({
 `;
   try {
     const cwd = process.cwd();
-    await fs11.writeFile(path12.join(cwd, "vibe-check.config.ts"), configContent);
+    await fs15.writeFile(path16.join(cwd, "vibe-check.config.ts"), configContent);
     console.log(chalk.green("\u2713"), "Created vibe-check.config.ts");
-    await fs11.mkdir(path12.join(cwd, "__evals__"), { recursive: true });
-    await fs11.writeFile(path12.join(cwd, "__evals__", "example.eval.json"), evalExampleContent);
+    await fs15.mkdir(path16.join(cwd, "__evals__"), { recursive: true });
+    await fs15.writeFile(path16.join(cwd, "__evals__", "example.eval.json"), evalExampleContent);
     console.log(chalk.green("\u2713"), "Created __evals__/example.eval.json");
     console.log();
     console.log(chalk.blue("Next steps:"));
@@ -3142,6 +4047,16 @@ function printSummary(result) {
     }
   }
 }
+var shuttingDown = false;
+var handleShutdown = (signal) => {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`
+${chalk.yellow(`Received ${signal}, shutting down gracefully...`)}`);
+  process.exit(1);
+};
+process.on("SIGTERM", () => handleShutdown("SIGTERM"));
+process.on("SIGINT", () => handleShutdown("SIGINT"));
 program.parse();
 //# sourceMappingURL=cli.js.map
 //# sourceMappingURL=cli.js.map

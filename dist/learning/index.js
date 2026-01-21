@@ -586,6 +586,31 @@ async function getSourceStats() {
   return stats;
 }
 dotenv.config();
+function parseExplanationResponse(text) {
+  const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+  const jsonContent = jsonMatch ? jsonMatch[1] : text;
+  try {
+    const parsed = JSON.parse(jsonContent.trim());
+    return {
+      whatWentWrong: parsed.whatWentWrong || "Unknown",
+      whyItFailed: parsed.whyItFailed || "Unknown",
+      rootCause: parsed.rootCause || "Unknown",
+      suggestedFix: parsed.suggestedFix || "No suggestion",
+      patternCategory: parsed.patternCategory || "other",
+      affectedComponent: parsed.affectedComponent,
+      confidence: Math.max(0, Math.min(1, parsed.confidence || 0.5))
+    };
+  } catch {
+    return {
+      whatWentWrong: "Failed to parse response",
+      whyItFailed: text.substring(0, 500),
+      rootCause: "Parse error",
+      suggestedFix: "Manual review required",
+      patternCategory: "other",
+      confidence: 0
+    };
+  }
+}
 var ExplanationGenerator = class {
   anthropic = null;
   config;
@@ -641,34 +666,8 @@ var ExplanationGenerator = class {
     }
     return prompt;
   }
-  /**
-   * Parses the LLM response into a structured explanation
-   */
   parseResponse(text) {
-    const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
-    const jsonContent = jsonMatch ? jsonMatch[1] : text;
-    try {
-      const parsed = JSON.parse(jsonContent.trim());
-      return {
-        whatWentWrong: parsed.whatWentWrong || "Unknown",
-        whyItFailed: parsed.whyItFailed || "Unknown",
-        rootCause: parsed.rootCause || "Unknown",
-        suggestedFix: parsed.suggestedFix || "No suggestion",
-        patternCategory: parsed.patternCategory || "other",
-        affectedComponent: parsed.affectedComponent,
-        confidence: Math.max(0, Math.min(1, parsed.confidence || 0.5))
-      };
-    } catch (error) {
-      console.warn("Failed to parse LLM response:", text.substring(0, 200));
-      return {
-        whatWentWrong: "Failed to parse response",
-        whyItFailed: text.substring(0, 500),
-        rootCause: "Parse error",
-        suggestedFix: "Manual review required",
-        patternCategory: "other",
-        confidence: 0
-      };
-    }
+    return parseExplanationResponse(text);
   }
   /**
    * Generates an explanation for a single failure
@@ -977,6 +976,39 @@ var PatternDetector = class {
   }
 };
 dotenv.config();
+function parseRuleGenerationResponse(text, defaultTargetSection, fallbackEvalIds) {
+  const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+  const jsonContent = jsonMatch ? jsonMatch[1] : text;
+  try {
+    const parsed = JSON.parse(jsonContent.trim());
+    return {
+      rule: parsed.rule || "No rule generated",
+      targetSection: parsed.targetSection || defaultTargetSection,
+      placement: parsed.placement,
+      rationale: parsed.rationale || "No rationale provided",
+      expectedImpact: {
+        evalIds: parsed.expectedImpact?.evalIds || fallbackEvalIds,
+        confidenceScore: Math.max(
+          0,
+          Math.min(1, parsed.expectedImpact?.confidenceScore || 0.5)
+        )
+      }
+    };
+  } catch {
+    return {
+      rule: text.substring(0, 500),
+      targetSection: defaultTargetSection,
+      rationale: "Failed to parse structured response",
+      expectedImpact: {
+        evalIds: fallbackEvalIds,
+        confidenceScore: 0.3
+      }
+    };
+  }
+}
+function getTargetSectionForCategory(category) {
+  return CATEGORY_TO_SECTION[category] || CATEGORY_TO_SECTION["other"];
+}
 var CATEGORY_TO_SECTION = {
   "routing-error": "CHAT_PROMPT.delegationPrinciple",
   "delegation-error": "CHAT_PROMPT.delegationPrinciple",
@@ -1058,11 +1090,8 @@ var RuleGenerator = class {
       console.warn("Could not load current instructions:", error);
     }
   }
-  /**
-   * Gets the target section for a pattern
-   */
   getTargetSection(pattern) {
-    return CATEGORY_TO_SECTION[pattern.category] || CATEGORY_TO_SECTION["other"];
+    return getTargetSectionForCategory(pattern.category);
   }
   /**
    * Builds the prompt for rule generation
@@ -1087,40 +1116,13 @@ var RuleGenerator = class {
     );
     return prompt;
   }
-  /**
-   * Parses the LLM response into a rule result
-   */
   parseResponse(text, pattern) {
-    const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
-    const jsonContent = jsonMatch ? jsonMatch[1] : text;
-    try {
-      const parsed = JSON.parse(jsonContent.trim());
-      const evalIds = pattern.failures.slice(0, 10).map((f) => f.failureInput.id);
-      return {
-        rule: parsed.rule || "No rule generated",
-        targetSection: parsed.targetSection || this.getTargetSection(pattern),
-        placement: parsed.placement,
-        rationale: parsed.rationale || "No rationale provided",
-        expectedImpact: {
-          evalIds: parsed.expectedImpact?.evalIds || evalIds,
-          confidenceScore: Math.max(
-            0,
-            Math.min(1, parsed.expectedImpact?.confidenceScore || 0.5)
-          )
-        }
-      };
-    } catch (error) {
-      console.warn("Failed to parse rule generation response:", text.substring(0, 200));
-      return {
-        rule: text.substring(0, 500),
-        targetSection: this.getTargetSection(pattern),
-        rationale: "Failed to parse structured response",
-        expectedImpact: {
-          evalIds: pattern.failures.slice(0, 5).map((f) => f.failureInput.id),
-          confidenceScore: 0.3
-        }
-      };
-    }
+    const fallbackEvalIds = pattern.failures.slice(0, 5).map((f) => f.failureInput.id);
+    return parseRuleGenerationResponse(
+      text,
+      this.getTargetSection(pattern),
+      fallbackEvalIds
+    );
   }
   /**
    * Generates a rule for a single pattern

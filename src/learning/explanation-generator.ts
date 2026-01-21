@@ -13,7 +13,7 @@ import type { FailureInput } from './data-sources/types.js';
 import type { FailureExplanation } from './types.js';
 import { getLearningConfig, type LearningConfig } from './config.js';
 
-interface ExplanationResult {
+export interface ExplanationResult {
   whatWentWrong: string;
   whyItFailed: string;
   rootCause: string;
@@ -21,6 +21,34 @@ interface ExplanationResult {
   patternCategory: string;
   affectedComponent?: string;
   confidence: number;
+}
+
+export function parseExplanationResponse(text: string): ExplanationResult {
+  const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+  const jsonContent = jsonMatch ? jsonMatch[1] : text;
+
+  try {
+    const parsed = JSON.parse(jsonContent.trim());
+
+    return {
+      whatWentWrong: parsed.whatWentWrong || 'Unknown',
+      whyItFailed: parsed.whyItFailed || 'Unknown',
+      rootCause: parsed.rootCause || 'Unknown',
+      suggestedFix: parsed.suggestedFix || 'No suggestion',
+      patternCategory: parsed.patternCategory || 'other',
+      affectedComponent: parsed.affectedComponent,
+      confidence: Math.max(0, Math.min(1, parsed.confidence || 0.5)),
+    };
+  } catch {
+    return {
+      whatWentWrong: 'Failed to parse response',
+      whyItFailed: text.substring(0, 500),
+      rootCause: 'Parse error',
+      suggestedFix: 'Manual review required',
+      patternCategory: 'other',
+      confidence: 0,
+    };
+  }
 }
 
 type AnthropicClient = import('@anthropic-ai/sdk').default;
@@ -114,37 +142,8 @@ export class ExplanationGenerator {
     return prompt;
   }
 
-  /**
-   * Parses the LLM response into a structured explanation
-   */
   private parseResponse(text: string): ExplanationResult {
-    // Try to extract JSON from markdown code block
-    const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
-    const jsonContent = jsonMatch ? jsonMatch[1] : text;
-
-    try {
-      const parsed = JSON.parse(jsonContent.trim());
-
-      return {
-        whatWentWrong: parsed.whatWentWrong || 'Unknown',
-        whyItFailed: parsed.whyItFailed || 'Unknown',
-        rootCause: parsed.rootCause || 'Unknown',
-        suggestedFix: parsed.suggestedFix || 'No suggestion',
-        patternCategory: parsed.patternCategory || 'other',
-        affectedComponent: parsed.affectedComponent,
-        confidence: Math.max(0, Math.min(1, parsed.confidence || 0.5)),
-      };
-    } catch (error) {
-      console.warn('Failed to parse LLM response:', text.substring(0, 200));
-      return {
-        whatWentWrong: 'Failed to parse response',
-        whyItFailed: text.substring(0, 500),
-        rootCause: 'Parse error',
-        suggestedFix: 'Manual review required',
-        patternCategory: 'other',
-        confidence: 0,
-      };
-    }
+    return parseExplanationResponse(text);
   }
 
   /**

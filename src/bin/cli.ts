@@ -261,4 +261,16 @@ function printSummary(result: import('../runner/eval-runner.js').EvalSuiteResult
   }
 }
 
+// Handle graceful shutdown signals
+let shuttingDown = false;
+const handleShutdown = (signal: string) => {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`\n${chalk.yellow(`Received ${signal}, shutting down gracefully...`)}`);
+  process.exit(1);
+};
+
+process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+process.on('SIGINT', () => handleShutdown('SIGINT'));
+
 program.parse();

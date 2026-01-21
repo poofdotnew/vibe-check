@@ -1,0 +1,22 @@
+{
+  "id": "iterative-refinement",
+  "name": "Iterative Code Refinement",
+  "description": "Test multi-turn conversation with per-turn evaluation",
+  "category": "multi-turn",
+  "turns": [
+    {
+      "prompt": "Create a basic greeting function",
+      "expectedBehavior": "Creates initial function implementation"
+    },
+    {
+      "prompt": "Add TypeScript types",
+      "expectedBehavior": "Adds proper type annotations"
+    },
+    {
+      "prompt": "Add JSDoc documentation",
+      "expectedBehavior": "Adds documentation comments"
+    }
+  ],
+  "sessionPersistence": true,
+  "tags": ["multi-turn", "iteration"]
+}

@@ -149,7 +149,7 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK', () => {
       const config = createResolvedConfig({
         testDir: evalsDir,
         agent,
-        agentType: 'claude-sdk',
+        agentType: 'claude-code',
         maxRetries: 0,
         parallel: false,
         timeout: 60000,
@@ -193,7 +193,7 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK', () => {
       const config = createResolvedConfig({
         testDir: evalsDir,
         agent,
-        agentType: 'claude-sdk',
+        agentType: 'claude-code',
         maxRetries: 0,
         parallel: false,
         timeout: 60000,
@@ -239,7 +239,7 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK', () => {
       const config = createResolvedConfig({
         testDir: evalsDir,
         agent,
-        agentType: 'claude-sdk',
+        agentType: 'claude-code',
         maxRetries: 0,
         parallel: false,
         timeout: 60000,
@@ -280,7 +280,7 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK', () => {
       const config = createResolvedConfig({
         testDir: evalsDir,
         agent,
-        agentType: 'claude-sdk',
+        agentType: 'claude-code',
         maxRetries: 0,
         parallel: false,
         timeout: 60000,
@@ -317,7 +317,7 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK', () => {
       const config = createResolvedConfig({
         testDir: evalsDir,
         agent,
-        agentType: 'claude-sdk',
+        agentType: 'claude-code',
         maxRetries: 1,
         parallel: false,
         timeout: 90000,
@@ -359,7 +359,7 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK', () => {
       const config = createResolvedConfig({
         testDir: evalsDir,
         agent,
-        agentType: 'claude-sdk',
+        agentType: 'claude-code',
         maxRetries: 1,
         parallel: false,
         timeout: 90000,
@@ -394,7 +394,7 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK', () => {
       const config = createResolvedConfig({
         testDir: evalsDir,
         agent,
-        agentType: 'claude-sdk',
+        agentType: 'claude-code',
         maxRetries: 0,
         parallel: false,
         timeout: 5000,
@@ -429,7 +429,7 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK', () => {
       const config = createResolvedConfig({
         testDir: evalsDir,
         agent,
-        agentType: 'claude-sdk',
+        agentType: 'claude-code',
         maxRetries: 0,
         parallel: true,
         maxConcurrency: 2,
@@ -469,7 +469,7 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK', () => {
       const config = createResolvedConfig({
         testDir: evalsDir,
         agent: wrappedAgent,
-        agentType: 'claude-sdk',
+        agentType: 'claude-code',
         maxRetries: 0,
         parallel: false,
         timeout: 60000,
@@ -526,7 +526,7 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK with Bash', () => {
     const config = createResolvedConfig({
       testDir: evalsDir,
       agent,
-      agentType: 'claude-sdk',
+      agentType: 'claude-code',
       maxRetries: 0,
       parallel: false,
       timeout: 60000,

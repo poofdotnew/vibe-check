@@ -4,17 +4,14 @@ import * as path from 'path';
 import * as os from 'os';
 import { EvalRunner } from '../../runner/eval-runner.js';
 import { defaultConfig, type VibeCheckConfig, type ResolvedConfig } from '../../config/types.js';
-import {
-  getJudgeRegistry,
-  resetJudgeRegistry,
-} from '../../judges/judge-registry.js';
+import { getJudgeRegistry, resetJudgeRegistry } from '../../judges/judge-registry.js';
 import {
   BaseJudge,
   type JudgeContext,
   type JudgeResult,
   type JudgeType,
 } from '../../judges/judge-interface.js';
-import type { AgentResult, ToolCall } from '../../config/types.js';
+import type { AgentResult } from '../../config/types.js';
 
 function createResolvedConfig(config: VibeCheckConfig): ResolvedConfig {
   return {
@@ -154,9 +151,7 @@ describe('Integration: Mock Agent Evals', () => {
         agent: async (): Promise<AgentResult> => ({
           output: 'File contents',
           success: true,
-          toolCalls: [
-            { toolName: 'Read', input: { path: '/file.ts' }, output: 'content' },
-          ],
+          toolCalls: [{ toolName: 'Read', input: { path: '/file.ts' }, output: 'content' }],
         }),
         maxRetries: 0,
         parallel: false,
@@ -190,9 +185,7 @@ describe('Integration: Mock Agent Evals', () => {
         agent: async (): Promise<AgentResult> => ({
           output: 'Done',
           success: true,
-          toolCalls: [
-            { toolName: 'Read', input: {}, output: 'x' },
-          ],
+          toolCalls: [{ toolName: 'Read', input: {}, output: 'x' }],
         }),
         maxRetries: 0,
         parallel: false,
@@ -423,7 +416,7 @@ describe('Integration: Mock Agent Evals', () => {
         testDir: evalsDir,
         agent: async (prompt) => {
           executionOrder.push(prompt);
-          await new Promise(r => setTimeout(r, 10));
+          await new Promise((r) => setTimeout(r, 10));
           return { output: prompt, success: true };
         },
         maxRetries: 0,
@@ -683,6 +676,6 @@ describe('Integration: Custom Judges', () => {
     expect(result.total).toBe(1);
     expect(result.passed).toBe(1);
     expect(result.results[0].judgeResults.length).toBe(2);
-    expect(result.results[0].judgeResults.every(j => j.passed)).toBe(true);
+    expect(result.results[0].judgeResults.every((j) => j.passed)).toBe(true);
   });
 });

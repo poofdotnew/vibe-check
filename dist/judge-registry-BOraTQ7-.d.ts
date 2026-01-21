@@ -1074,6 +1074,7 @@ interface JudgeResult {
     reasoning: string;
     details?: Record<string, unknown>;
 }
+type ErrorType = 'api' | 'timeout' | 'judge' | 'unknown';
 interface EvalCaseResult {
     evalCase: EvalCase;
     success: boolean;
@@ -1085,10 +1086,17 @@ interface EvalCaseResult {
         input: unknown;
         output?: unknown;
         isError?: boolean;
+        timestamp?: number;
+        duration?: number;
     }>;
     error?: Error;
+    errorType?: ErrorType;
     retryCount?: number;
     trialResults?: boolean[];
+    /** Whether this test passed on a retry (indicates flaky test) */
+    flaky?: boolean;
+    /** Error messages from each failed retry attempt */
+    retryErrors?: string[];
 }
 
 interface ExecutionResult {
@@ -1100,6 +1108,9 @@ interface ExecutionResult {
     numTurns?: number;
     sessionId?: string;
     workingDirectory?: string;
+    workspaceId?: string;
+    transcript?: Transcript;
+    progressUpdates?: ProgressRecord[];
     usage?: {
         inputTokens: number;
         outputTokens: number;
@@ -1144,11 +1155,44 @@ declare abstract class BaseJudge implements Judge {
 }
 declare function agentResultToExecutionResult(result: AgentResult): ExecutionResult;
 
+interface EvalWorkspace {
+    id: string;
+    path: string;
+}
 interface ToolCall {
     toolName: string;
     input: unknown;
     output?: unknown;
     isError?: boolean;
+    timestamp?: number;
+    duration?: number;
+}
+interface ProgressRecord {
+    type: string;
+    percentage: number;
+    description: string;
+    timestamp: number;
+    metadata?: Record<string, unknown>;
+}
+interface TranscriptTurn {
+    role: 'user' | 'assistant';
+    content: string;
+    toolCalls?: ToolCall[];
+    reasoning?: string;
+    timestamp: number;
+}
+interface TranscriptOutcome {
+    files: string[];
+    success: boolean;
+    error?: string;
+    finalState?: Record<string, unknown>;
+}
+interface Transcript {
+    turns: TranscriptTurn[];
+    outcome: TranscriptOutcome;
+    duration: number;
+    startTime: number;
+    endTime: number;
 }
 interface AgentContext {
     workingDirectory: string;
@@ -1172,7 +1216,7 @@ interface AgentResult {
     };
 }
 type AgentFunction = (prompt: string, context: AgentContext) => Promise<AgentResult>;
-type AgentType = 'claude-code' | 'claude-sdk' | 'generic';
+type AgentType = 'claude-code' | 'generic';
 interface LearningConfig {
     enabled?: boolean;
     ruleOutputDir?: string;
@@ -1201,22 +1245,24 @@ interface VibeCheckConfig {
     rubricsDir?: string;
     outputDir?: string;
     verbose?: boolean;
-    workspaceTemplate?: string;
     preserveWorkspaces?: boolean;
     learning?: LearningConfig;
+    createWorkspace?: () => Promise<EvalWorkspace>;
+    cleanupWorkspace?: (workspace: EvalWorkspace) => Promise<void>;
     setup?: () => Promise<void>;
     teardown?: () => Promise<void>;
     beforeEach?: (evalCase: EvalCase) => Promise<void>;
     afterEach?: (result: EvalCaseResult) => Promise<void>;
 }
-interface ResolvedConfig extends Required<Omit<VibeCheckConfig, 'setup' | 'teardown' | 'beforeEach' | 'afterEach' | 'learning' | 'judges' | 'workspaceTemplate'>> {
+interface ResolvedConfig extends Required<Omit<VibeCheckConfig, 'setup' | 'teardown' | 'beforeEach' | 'afterEach' | 'learning' | 'judges' | 'createWorkspace' | 'cleanupWorkspace'>> {
     setup?: () => Promise<void>;
     teardown?: () => Promise<void>;
     beforeEach?: (evalCase: EvalCase) => Promise<void>;
     afterEach?: (result: EvalCaseResult) => Promise<void>;
     learning: Required<LearningConfig>;
     judges: Judge[];
-    workspaceTemplate?: string;
+    createWorkspace?: () => Promise<EvalWorkspace>;
+    cleanupWorkspace?: (workspace: EvalWorkspace) => Promise<void>;
 }
 declare function defineConfig(config: VibeCheckConfig): VibeCheckConfig;
 declare const defaultConfig: Omit<ResolvedConfig, 'agent'>;
@@ -1226,14 +1272,18 @@ declare class JudgeRegistry {
     constructor();
     private registerBuiltInJudges;
     register(judge: Judge): void;
+    /** @internal Used for testing only */
     unregister(id: string): boolean;
     get(id: string): Judge | undefined;
     has(id: string): boolean;
     list(): string[];
+    /** @internal Used for testing only */
     listByType(type: JudgeType): string[];
+    /** @internal Used for testing only */
     getAll(): Judge[];
 }
 declare function getJudgeRegistry(): JudgeRegistry;
+/** @internal Used for testing only */
 declare function resetJudgeRegistry(): void;
 
-export { type AgentContext as A, type BasicEvalCase as B, type CodeGenEvalCase as C, type JudgeType as D, type EvalCategory as E, type JudgeContext as F, type ToolCallRecord as G, JudgeRegistry as H, getJudgeRegistry as I, type JudgeResult as J, resetJudgeRegistry as K, type LearningConfig as L, type MultiTurnEvalCase as M, type ResolvedConfig as R, type ToolCall as T, type VibeCheckConfig as V, type EvalCaseResult as a, type EvalCase as b, type ExecutionResult as c, defineConfig as d, defaultConfig as e, type AgentResult as f, type AgentFunction as g, type AgentType as h, isToolEval as i, isCodeGenEval as j, isRoutingEval as k, isMultiTurnEval as l, isBasicEval as m, type EvalAgentType as n, type ReferenceSolution as o, parseEvalCase as p, type TrialConfig as q, type ExpectedToolCall as r, type ExpectedSkill as s, type ToolEvalCase as t, type ExpectedPattern as u, type RoutingEvalCase as v, type Turn as w, BaseJudge as x, agentResultToExecutionResult as y, type Judge as z };
+export { type AgentContext as A, type RoutingEvalCase as B, type CodeGenEvalCase as C, type Turn as D, type EvalCategory as E, type BasicEvalCase as F, BaseJudge as G, agentResultToExecutionResult as H, type Judge as I, type JudgeResult as J, type JudgeType as K, type LearningConfig as L, type MultiTurnEvalCase as M, type JudgeContext as N, type ToolCallRecord as O, type ProgressRecord as P, JudgeRegistry as Q, type ResolvedConfig as R, getJudgeRegistry as S, type ToolCall as T, resetJudgeRegistry as U, type VibeCheckConfig as V, type EvalCaseResult as a, type EvalCase as b, type ExecutionResult as c, type ErrorType as d, defineConfig as e, defaultConfig as f, type AgentResult as g, type AgentFunction as h, type AgentType as i, type EvalWorkspace as j, type Transcript as k, type TranscriptTurn as l, type TranscriptOutcome as m, isToolEval as n, isCodeGenEval as o, parseEvalCase as p, isRoutingEval as q, isMultiTurnEval as r, isBasicEval as s, type EvalAgentType as t, type ReferenceSolution as u, type TrialConfig as v, type ExpectedToolCall as w, type ExpectedSkill as x, type ToolEvalCase as y, type ExpectedPattern as z };

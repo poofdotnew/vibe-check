@@ -10,4 +10,22 @@ export type {
 
 export { JudgeRegistry, getJudgeRegistry, resetJudgeRegistry } from './judge-registry.js';
 
-export { FileExistenceJudge, ToolInvocationJudge, PatternMatchJudge } from './builtin/index.js';
+export {
+  FileExistenceJudge,
+  ToolInvocationJudge,
+  PatternMatchJudge,
+  AgentRoutingJudge,
+  SkillInvocationJudge,
+  SyntaxValidationJudge,
+  LLMJudge,
+  loadRubric,
+  createLLMCodeQualityJudge,
+  createLLMRoutingQualityJudge,
+  createLLMResponseQualityJudge,
+  createLLMConversationQualityJudge,
+} from './builtin/index.js';
+export type {
+  Rubric,
+  LLMJudgeOptions,
+  AgentRoutingJudgeOptions,
+} from './builtin/index.js';

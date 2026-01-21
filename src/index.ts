@@ -9,6 +9,11 @@ export type {
   LearningConfig,
   VibeCheckConfig,
   ResolvedConfig,
+  EvalWorkspace,
+  ProgressRecord,
+  Transcript,
+  TranscriptTurn,
+  TranscriptOutcome,
 } from './config/types.js';
 
 export {
@@ -43,7 +48,7 @@ export { loadConfig } from './config/config-loader.js';
 
 // Runner
 export { EvalRunner } from './runner/eval-runner.js';
-export type { RunnerOptions, EvalSuiteResult } from './runner/eval-runner.js';
+export type { EvalRunnerOptions, RunnerOptions, EvalSuiteResult } from './runner/eval-runner.js';
 
 // Judges
 export { BaseJudge, agentResultToExecutionResult } from './judges/judge-interface.js';
@@ -59,11 +64,27 @@ export { JudgeRegistry, getJudgeRegistry, resetJudgeRegistry } from './judges/ju
 
 // Harness
 export { TestHarness } from './harness/test-harness.js';
-export type { HarnessOptions } from './harness/test-harness.js';
+export type { TestHarnessOptions, HarnessOptions } from './harness/test-harness.js';
 
-export { WorkspaceManager } from './harness/workspace-manager.js';
-export type { EvalWorkspace } from './harness/workspace-manager.js';
 
 // Utils
 export { loadEvalCases, loadEvalCase, groupByCategory } from './utils/eval-loader.js';
-export type { LoadOptions } from './utils/eval-loader.js';
+export type { EvalLoadOptions, LoadOptions } from './utils/eval-loader.js';
+
+export {
+  formatDuration,
+  formatPassRate,
+  getStatusSymbol,
+  summarizeByCategory,
+  summarizeErrors,
+  printSummary,
+  generateJsonReport,
+} from './utils/reporter.js';
+export type { EvalReportOptions, ReportOptions, CategorySummary, ErrorSummary } from './utils/reporter.js';
+
+export {
+  aggregateResults,
+  detectRegressions,
+  calculateNonDeterminismMetrics,
+} from './utils/result-aggregator.js';
+export type { AggregatedResult, AggregatedSummary } from './utils/result-aggregator.js';

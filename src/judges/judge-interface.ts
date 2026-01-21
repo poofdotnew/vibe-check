@@ -1,5 +1,5 @@
 import type { EvalCase, JudgeResult } from '../config/schemas.js';
-import type { AgentResult } from '../config/types.js';
+import type { AgentResult, Transcript, ProgressRecord } from '../config/types.js';
 
 export interface ExecutionResult {
   success: boolean;
@@ -10,6 +10,9 @@ export interface ExecutionResult {
   numTurns?: number;
   sessionId?: string;
   workingDirectory?: string;
+  workspaceId?: string;
+  transcript?: Transcript;
+  progressUpdates?: ProgressRecord[];
   usage?: {
     inputTokens: number;
     outputTokens: number;

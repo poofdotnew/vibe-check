@@ -4,7 +4,7 @@
  */
 
 import * as readline from 'readline';
-import type { ProposedRule, FailurePattern } from './types.js';
+import type { ProposedRule } from './types.js';
 
 export interface ReviewDecision {
   rule: ProposedRule;
@@ -31,7 +31,10 @@ function formatRuleDisplay(rule: ProposedRule, index: number, total: number): st
 
   const ruleBox = `
 ┌─────────────────────────────────────────────────────────────────┐
-│ ${rule.ruleContent.split('\n').map(line => line.padEnd(63)).join('\n│ ')}
+│ ${rule.ruleContent
+    .split('\n')
+    .map((line) => line.padEnd(63))
+    .join('\n│ ')}
 └─────────────────────────────────────────────────────────────────┘`;
 
   const evidence = `
@@ -107,25 +110,27 @@ export class CLIReviewer {
 
     switch (answer) {
       case 'a':
-      case 'approve':
+      case 'approve': {
         const approveNotes = await this.prompt('Notes (optional): ');
         return {
           rule: { ...rule, status: 'approved' },
           decision: 'approve',
           notes: approveNotes || undefined,
         };
+      }
 
       case 'r':
-      case 'reject':
+      case 'reject': {
         const rejectReason = await this.prompt('Reason for rejection: ');
         return {
           rule: { ...rule, status: 'rejected', reviewNotes: rejectReason },
           decision: 'reject',
           notes: rejectReason,
         };
+      }
 
       case 'm':
-      case 'modify':
+      case 'modify': {
         console.log('\nCurrent rule:');
         console.log(rule.ruleContent);
         const modified = await this.promptMultiline('\nEnter modified rule:');
@@ -134,6 +139,7 @@ export class CLIReviewer {
           decision: 'modify',
           modifiedRule: modified,
         };
+      }
 
       case 's':
       case 'skip':
@@ -243,10 +249,7 @@ export class CLIReviewer {
   /**
    * Quick approve all rules (for non-interactive mode)
    */
-  autoApproveAll(
-    rules: ProposedRule[],
-    minConfidence: number = 0.8
-  ): ReviewSession {
+  autoApproveAll(rules: ProposedRule[], minConfidence: number = 0.8): ReviewSession {
     const decisions: ReviewDecision[] = [];
     const approved: ProposedRule[] = [];
     const rejected: ProposedRule[] = [];

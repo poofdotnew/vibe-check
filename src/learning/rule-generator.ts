@@ -12,7 +12,7 @@ dotenv.config();
 import type { FailurePattern, ProposedRule } from './types.js';
 import { getLearningConfig, type LearningConfig } from './config.js';
 
-interface RuleGenerationResult {
+export interface RuleGenerationResult {
   rule: string;
   targetSection: string;
   placement?: string;
@@ -21,6 +21,47 @@ interface RuleGenerationResult {
     evalIds: string[];
     confidenceScore: number;
   };
+}
+
+export function parseRuleGenerationResponse(
+  text: string,
+  defaultTargetSection: string,
+  fallbackEvalIds: string[]
+): RuleGenerationResult {
+  const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+  const jsonContent = jsonMatch ? jsonMatch[1] : text;
+
+  try {
+    const parsed = JSON.parse(jsonContent.trim());
+
+    return {
+      rule: parsed.rule || 'No rule generated',
+      targetSection: parsed.targetSection || defaultTargetSection,
+      placement: parsed.placement,
+      rationale: parsed.rationale || 'No rationale provided',
+      expectedImpact: {
+        evalIds: parsed.expectedImpact?.evalIds || fallbackEvalIds,
+        confidenceScore: Math.max(
+          0,
+          Math.min(1, parsed.expectedImpact?.confidenceScore || 0.5)
+        ),
+      },
+    };
+  } catch {
+    return {
+      rule: text.substring(0, 500),
+      targetSection: defaultTargetSection,
+      rationale: 'Failed to parse structured response',
+      expectedImpact: {
+        evalIds: fallbackEvalIds,
+        confidenceScore: 0.3,
+      },
+    };
+  }
+}
+
+export function getTargetSectionForCategory(category: string): string {
+  return CATEGORY_TO_SECTION[category] || CATEGORY_TO_SECTION['other'];
 }
 
 /**
@@ -121,14 +162,8 @@ export class RuleGenerator {
     }
   }
 
-  /**
-   * Gets the target section for a pattern
-   */
   private getTargetSection(pattern: FailurePattern): string {
-    return (
-      CATEGORY_TO_SECTION[pattern.category] ||
-      CATEGORY_TO_SECTION['other']
-    );
+    return getTargetSectionForCategory(pattern.category);
   }
 
   /**
@@ -178,47 +213,13 @@ export class RuleGenerator {
     return prompt;
   }
 
-  /**
-   * Parses the LLM response into a rule result
-   */
   private parseResponse(text: string, pattern: FailurePattern): RuleGenerationResult {
-    // Try to extract JSON from markdown code block
-    const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
-    const jsonContent = jsonMatch ? jsonMatch[1] : text;
-
-    try {
-      const parsed = JSON.parse(jsonContent.trim());
-
-      // Get failure IDs for expected impact
-      const evalIds = pattern.failures
-        .slice(0, 10)
-        .map((f) => f.failureInput.id);
-
-      return {
-        rule: parsed.rule || 'No rule generated',
-        targetSection: parsed.targetSection || this.getTargetSection(pattern),
-        placement: parsed.placement,
-        rationale: parsed.rationale || 'No rationale provided',
-        expectedImpact: {
-          evalIds: parsed.expectedImpact?.evalIds || evalIds,
-          confidenceScore: Math.max(
-            0,
-            Math.min(1, parsed.expectedImpact?.confidenceScore || 0.5)
-          ),
-        },
-      };
-    } catch (error) {
-      console.warn('Failed to parse rule generation response:', text.substring(0, 200));
-      return {
-        rule: text.substring(0, 500),
-        targetSection: this.getTargetSection(pattern),
-        rationale: 'Failed to parse structured response',
-        expectedImpact: {
-          evalIds: pattern.failures.slice(0, 5).map((f) => f.failureInput.id),
-          confidenceScore: 0.3,
-        },
-      };
-    }
+    const fallbackEvalIds = pattern.failures.slice(0, 5).map((f) => f.failureInput.id);
+    return parseRuleGenerationResponse(
+      text,
+      this.getTargetSection(pattern),
+      fallbackEvalIds
+    );
   }
 
   /**

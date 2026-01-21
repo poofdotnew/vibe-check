@@ -1,11 +1,11 @@
 {
   "name": "vibe-check-custom-judges-example",
-  "version": "1.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
-    "test": "vibe-check run"
+    "vibe-check": "vibe-check"
   },
   "dependencies": {
-    "@pooflabs/vibe-check": "workspace:*"
+    "@pooflabs/vibe-check": "file:../.."
   }
 }

@@ -1,11 +1,49 @@
 import type { EvalCase, EvalCaseResult } from './schemas.js';
 import type { Judge } from '../judges/judge-interface.js';
 
+export interface EvalWorkspace {
+  id: string;
+  path: string;
+}
+
 export interface ToolCall {
   toolName: string;
   input: unknown;
   output?: unknown;
   isError?: boolean;
+  timestamp?: number;
+  duration?: number;
+}
+
+export interface ProgressRecord {
+  type: string;
+  percentage: number;
+  description: string;
+  timestamp: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface TranscriptTurn {
+  role: 'user' | 'assistant';
+  content: string;
+  toolCalls?: ToolCall[];
+  reasoning?: string;
+  timestamp: number;
+}
+
+export interface TranscriptOutcome {
+  files: string[];
+  success: boolean;
+  error?: string;
+  finalState?: Record<string, unknown>;
+}
+
+export interface Transcript {
+  turns: TranscriptTurn[];
+  outcome: TranscriptOutcome;
+  duration: number;
+  startTime: number;
+  endTime: number;
 }
 
 export interface AgentContext {
@@ -36,7 +74,7 @@ export type AgentFunction = (
   context: AgentContext
 ) => Promise<AgentResult>;
 
-export type AgentType = 'claude-code' | 'claude-sdk' | 'generic';
+export type AgentType = 'claude-code' | 'generic';
 
 export interface LearningConfig {
   enabled?: boolean;
@@ -67,23 +105,25 @@ export interface VibeCheckConfig {
   rubricsDir?: string;
   outputDir?: string;
   verbose?: boolean;
-  workspaceTemplate?: string;
   preserveWorkspaces?: boolean;
   learning?: LearningConfig;
+  createWorkspace?: () => Promise<EvalWorkspace>;
+  cleanupWorkspace?: (workspace: EvalWorkspace) => Promise<void>;
   setup?: () => Promise<void>;
   teardown?: () => Promise<void>;
   beforeEach?: (evalCase: EvalCase) => Promise<void>;
   afterEach?: (result: EvalCaseResult) => Promise<void>;
 }
 
-export interface ResolvedConfig extends Required<Omit<VibeCheckConfig, 'setup' | 'teardown' | 'beforeEach' | 'afterEach' | 'learning' | 'judges' | 'workspaceTemplate'>> {
+export interface ResolvedConfig extends Required<Omit<VibeCheckConfig, 'setup' | 'teardown' | 'beforeEach' | 'afterEach' | 'learning' | 'judges' | 'createWorkspace' | 'cleanupWorkspace'>> {
   setup?: () => Promise<void>;
   teardown?: () => Promise<void>;
   beforeEach?: (evalCase: EvalCase) => Promise<void>;
   afterEach?: (result: EvalCaseResult) => Promise<void>;
   learning: Required<LearningConfig>;
   judges: Judge[];
-  workspaceTemplate?: string;
+  createWorkspace?: () => Promise<EvalWorkspace>;
+  cleanupWorkspace?: (workspace: EvalWorkspace) => Promise<void>;
 }
 
 export function defineConfig(config: VibeCheckConfig): VibeCheckConfig {

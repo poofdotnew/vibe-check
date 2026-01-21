@@ -1,15 +1,12 @@
 {
   "name": "vibe-check-claude-sdk-example",
-  "version": "1.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
-    "test": "vibe-check run",
-    "test:list": "vibe-check list",
-    "test:tools": "vibe-check run --category tool",
-    "test:codegen": "vibe-check run --category code-gen"
+    "vibe-check": "vibe-check"
   },
   "dependencies": {
-    "@pooflabs/vibe-check": "workspace:*",
-    "@anthropic-ai/claude-agent-sdk": "^0.1.0"
+    "@pooflabs/vibe-check": "file:../..",
+    "@anthropic-ai/claude-agent-sdk": "^0.2.0"
   }
 }

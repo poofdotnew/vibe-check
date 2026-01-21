@@ -80,8 +80,9 @@ function resolveConfig(userConfig: VibeCheckConfig): ResolvedConfig {
     rubricsDir: userConfig.rubricsDir ?? defaultConfig.rubricsDir,
     outputDir: userConfig.outputDir ?? defaultConfig.outputDir,
     verbose: userConfig.verbose ?? defaultConfig.verbose,
-    workspaceTemplate: userConfig.workspaceTemplate,
     preserveWorkspaces: userConfig.preserveWorkspaces ?? defaultConfig.preserveWorkspaces,
+    createWorkspace: userConfig.createWorkspace,
+    cleanupWorkspace: userConfig.cleanupWorkspace,
     learning: {
       enabled: userConfig.learning?.enabled ?? defaultConfig.learning.enabled,
       ruleOutputDir: userConfig.learning?.ruleOutputDir ?? defaultConfig.learning.ruleOutputDir,

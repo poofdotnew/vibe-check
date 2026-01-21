@@ -77,7 +77,8 @@ export class JsonlDataSource implements DataSource {
 
   constructor(promptRunsDir?: string) {
     // Default to cdk/dev-server-manager/prompt-runs relative to project root
-    this.promptRunsDir = promptRunsDir ||
+    this.promptRunsDir =
+      promptRunsDir ||
       path.join(__dirname, '..', '..', '..', 'cdk', 'dev-server-manager', 'prompt-runs');
   }
 
@@ -98,8 +99,8 @@ export class JsonlDataSource implements DataSource {
     try {
       const entries = await fs.readdir(this.promptRunsDir, { withFileTypes: true });
       return entries
-        .filter(e => e.isDirectory() && e.name.startsWith('project-'))
-        .map(e => path.join(this.promptRunsDir, e.name));
+        .filter((e) => e.isDirectory() && e.name.startsWith('project-'))
+        .map((e) => path.join(this.promptRunsDir, e.name));
     } catch {
       return [];
     }
@@ -173,7 +174,7 @@ export class JsonlDataSource implements DataSource {
 
     const sessions: Session[] = [];
 
-    for (const [key, msgs] of sessionMap) {
+    for (const [_key, msgs] of sessionMap) {
       // Sort by timestamp
       msgs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
@@ -208,9 +209,10 @@ export class JsonlDataSource implements DataSource {
 
     // Check toolUseResult for errors
     if (msg.toolUseResult) {
-      const resultStr = typeof msg.toolUseResult === 'string'
-        ? msg.toolUseResult
-        : JSON.stringify(msg.toolUseResult);
+      const resultStr =
+        typeof msg.toolUseResult === 'string'
+          ? msg.toolUseResult
+          : JSON.stringify(msg.toolUseResult);
       if (resultStr.toLowerCase().includes('error')) {
         errors.push({
           messageUuid: msg.uuid,
@@ -228,7 +230,8 @@ export class JsonlDataSource implements DataSource {
           errors.push({
             messageUuid: msg.uuid,
             toolName: this.findToolNameForResult(msg, block.tool_use_id),
-            errorMessage: typeof block.content === 'string' ? block.content : JSON.stringify(block.content),
+            errorMessage:
+              typeof block.content === 'string' ? block.content : JSON.stringify(block.content),
             timestamp: msg.timestamp,
             parentUuid: msg.parentUuid || undefined,
           });
@@ -261,7 +264,7 @@ export class JsonlDataSource implements DataSource {
    * Extracts the initial prompt from a session
    */
   private extractPrompt(session: Session): string {
-    const firstUserMsg = session.messages.find(m => m.type === 'user');
+    const firstUserMsg = session.messages.find((m) => m.type === 'user');
     if (!firstUserMsg) return '';
 
     const content = firstUserMsg.message?.content;
@@ -269,7 +272,7 @@ export class JsonlDataSource implements DataSource {
       return content;
     }
     if (Array.isArray(content)) {
-      const textBlock = content.find(b => b.type === 'text');
+      const textBlock = content.find((b) => b.type === 'text');
       return textBlock?.text || '';
     }
     return '';
@@ -303,8 +306,13 @@ export class JsonlDataSource implements DataSource {
               toolCalls.push({
                 name: toolUse.name || 'unknown',
                 input: toolUse.input,
-                output: typeof block.content === 'string' ? block.content : JSON.stringify(block.content),
-                error: block.is_error ? (typeof block.content === 'string' ? block.content : JSON.stringify(block.content)) : undefined,
+                output:
+                  typeof block.content === 'string' ? block.content : JSON.stringify(block.content),
+                error: block.is_error
+                  ? typeof block.content === 'string'
+                    ? block.content
+                    : JSON.stringify(block.content)
+                  : undefined,
                 timestamp: msg.timestamp,
               });
             }
@@ -329,7 +337,7 @@ export class JsonlDataSource implements DataSource {
           return content;
         }
         if (Array.isArray(content)) {
-          const textBlock = content.find(b => b.type === 'text');
+          const textBlock = content.find((b) => b.type === 'text');
           if (textBlock?.text) {
             return textBlock.text;
           }
@@ -349,7 +357,7 @@ export class JsonlDataSource implements DataSource {
 
     // Combine all errors into a single error message
     const errorMessage = session.errors
-      .map(e => e.toolName ? `${e.toolName}: ${e.errorMessage}` : e.errorMessage)
+      .map((e) => (e.toolName ? `${e.toolName}: ${e.errorMessage}` : e.errorMessage))
       .join('\n');
 
     return {
@@ -437,7 +445,7 @@ export class JsonlDataSource implements DataSource {
         const messages = await this.parseJsonlFile(filePath);
         const sessions = this.groupIntoSessions(messages);
         sessionCount += sessions.length;
-        errorSessionCount += sessions.filter(s => s.hasErrors).length;
+        errorSessionCount += sessions.filter((s) => s.hasErrors).length;
       }
     }
 

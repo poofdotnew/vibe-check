@@ -30,6 +30,7 @@
 
 ## Table of Contents
 
+- [Background](#background)
 - [Why vibe-check?](#why-vibe-check)
 - [Features](#features)
 - [Installation](#installation)
@@ -48,47 +49,96 @@
 - [Contributing](#contributing)
 - [License](#license)
 
+## Background
+
+Building reliable AI agents is an incredibly challenging endeavor. Unlike
+traditional software where inputs and outputs are deterministic, AI agents
+operate in a complex, non-deterministic environment where the smallest changes
+can have unexpected and far-reaching consequences. A minor prompt modification,
+a slight adjustment to system instructions, or even a change in model parameters
+can ripple through the entire system, causing subtle failures that are difficult
+to detect and diagnose.
+
+Testing AI agents presents unique challenges that traditional testing frameworks
+cannot adequately address. How do you validate that an agent correctly
+interprets user intent? How do you ensure tool invocations are appropriate and
+executed in the right sequence? How do you catch regressions when a prompt
+change breaks edge cases you didn't anticipate? These questions become
+exponentially more complex when dealing with multi-turn conversations, code
+generation, and complex routing decisions.
+
+We built **vibe-check** internally to rigorously test and validate
+[poof.new](https://poof.new). As we iterated on prompts, refined agent
+behaviors, and added new capabilities, we needed a systematic way to ensure our
+changes didn't break existing functionality—and to catch issues before they
+reached production. Traditional testing approaches fell short, so we created a
+framework specifically designed for AI agent evaluation.
+
+After using vibe-check extensively in our own development process, we're now
+open-sourcing it to help the broader AI agent development community. We believe
+that robust testing and evaluation frameworks are essential for building
+production-ready AI systems, and we hope vibe-check will help others navigate
+the complexities of agent development with more confidence.
+
 ## Why vibe-check?
 
-Building reliable AI agents is hard. Traditional testing approaches fall short when evaluating LLM behavior, tool usage, and multi-turn interactions. **vibe-check** provides a comprehensive framework specifically designed for AI agent evaluation:
+Building reliable AI agents is hard. Traditional testing approaches fall short
+when evaluating LLM behavior, tool usage, and multi-turn interactions.
+**vibe-check** provides a comprehensive framework specifically designed for AI
+agent evaluation:
 
-- **Agent-Native Testing**: Evaluate tool calls, code generation, routing decisions, and conversational flows
-- **Learning from Failures**: Built-in learning system analyzes failures and suggests prompt improvements
-- **Production-Ready**: Parallel execution, retries, isolated workspaces, and detailed reporting
-- **Framework Agnostic**: Works with Claude SDK, custom agents, or any LLM-powered system
-- **Developer-First**: TypeScript-native with full type safety and intuitive APIs
+- **Agent-Native Testing**: Evaluate tool calls, code generation, routing
+  decisions, and conversational flows
+- **Learning from Failures**: Built-in learning system analyzes failures and
+  suggests prompt improvements
+- **Production-Ready**: Parallel execution, retries, isolated workspaces, and
+  detailed reporting
+- **Framework Agnostic**: Works with Claude SDK, custom agents, or any
+  LLM-powered system
+- **Developer-First**: TypeScript-native with full type safety and intuitive
+  APIs
 
 ### Real-World Use Cases
 
-- **🤖 Agent Development**: Validate your AI agent meets requirements before shipping
+- **🤖 Agent Development**: Validate your AI agent meets requirements before
+  shipping
 - **📊 Regression Testing**: Catch regressions when updating prompts or models
 - **🔄 A/B Testing**: Compare agent performance across different configurations
-- **📈 Continuous Improvement**: Use learning system to systematically improve prompts
+- **📈 Continuous Improvement**: Use learning system to systematically improve
+  prompts
 - **🎯 Benchmarking**: Measure and track agent performance over time
 - **🔍 Pre-deployment Validation**: Gate production deployments on eval results
 
 ### Comparison
 
-| Feature | vibe-check | Manual Testing | Unit Tests |
-|---------|-----------|----------------|------------|
-| Agent-specific evaluation | ✅ | ❌ | ❌ |
-| Tool call validation | ✅ | ⚠️ Difficult | ❌ |
-| Multi-turn conversations | ✅ | ⚠️ Manual | ❌ |
-| Learning from failures | ✅ | ❌ | ❌ |
-| Isolated workspaces | ✅ | ❌ | ⚠️ Manual |
-| Parallel execution | ✅ | ❌ | ✅ |
-| Framework agnostic | ✅ | ✅ | ⚠️ Limited |
-| TypeScript-native | ✅ | N/A | ✅ |
+| Feature                   | vibe-check | Manual Testing | Unit Tests |
+| ------------------------- | ---------- | -------------- | ---------- |
+| Agent-specific evaluation | ✅         | ❌             | ❌         |
+| Tool call validation      | ✅         | ⚠️ Difficult   | ❌         |
+| Multi-turn conversations  | ✅         | ⚠️ Manual      | ❌         |
+| Learning from failures    | ✅         | ❌             | ❌         |
+| Isolated workspaces       | ✅         | ❌             | ⚠️ Manual  |
+| Parallel execution        | ✅         | ❌             | ✅         |
+| Framework agnostic        | ✅         | ✅             | ⚠️ Limited |
+| TypeScript-native         | ✅         | N/A            | ✅         |
 
 ## Features
 
-- **5 Eval Categories**: Tool usage, code generation, routing, multi-turn conversations, and basic evaluations
-- **Built-in Judges**: File existence, tool invocation, and pattern matching validators
+- **5 Eval Categories**: Tool usage, code generation, routing, multi-turn
+  conversations, and basic evaluations
+- **7 Built-in Judges**: File existence, tool invocation, pattern matching,
+  syntax validation, skill invocation, and 4 LLM-based judges with rubric support
+- **Automatic Tool Extraction**: For `claude-code` agents, tool calls are
+  automatically extracted from JSONL logs
 - **Extensible Judge System**: Create custom judges for specialized validation
-- **Parallel Execution**: Run evaluations concurrently with configurable concurrency limits
+- **Parallel Execution**: Run evaluations concurrently with configurable
+  concurrency
 - **Retry Logic**: Automatic retries with exponential backoff for flaky tests
+- **Flaky Test Detection**: Automatically identifies tests that pass on retry
 - **Isolated Workspaces**: Each eval runs in its own temporary directory
 - **Multi-trial Support**: Run multiple trials per eval with pass thresholds
+- **Per-Turn Judges**: Evaluate each turn independently in multi-turn
+  conversations
 - **Learning System**: Analyze failures and generate improvement rules
 - **TypeScript First**: Full type safety with comprehensive type exports
 
@@ -114,6 +164,7 @@ bunx vibe-check init
 ```
 
 This creates:
+
 - `vibe-check.config.ts` - Configuration file with agent function stub
 - `__evals__/example.eval.json` - Example evaluation case
 
@@ -122,10 +173,10 @@ This creates:
 Edit `vibe-check.config.ts` to implement your agent function:
 
 ```typescript
-import { defineConfig } from '@pooflabs/vibe-check';
+import { defineConfig } from "@pooflabs/vibe-check";
 
 export default defineConfig({
-  testDir: './__evals__',
+  testDir: "./__evals__",
 
   agent: async (prompt, context) => {
     // Your agent implementation here
@@ -177,32 +228,41 @@ bunx vibe-check run
 Create `vibe-check.config.ts` in your project root:
 
 ```typescript
-import { defineConfig } from '@pooflabs/vibe-check';
+import { defineConfig } from "@pooflabs/vibe-check";
 
 export default defineConfig({
   // Required: Your agent function
   agent: async (prompt, context) => {
-    return { output: '', success: true };
+    return { output: "", success: true };
   },
 
   // Optional settings with defaults shown
-  agentType: 'generic',           // 'claude-code' | 'claude-sdk' | 'generic'
-  testDir: './__evals__',         // Directory containing eval cases
-  testMatch: ['**/*.eval.json'],  // Glob patterns for eval files
-  parallel: true,                 // Run evals in parallel
-  maxConcurrency: 3,              // Max concurrent evals
-  timeout: 300000,                // Timeout per eval (ms)
-  maxRetries: 2,                  // Retry failed evals
-  retryDelayMs: 1000,             // Initial retry delay
-  retryBackoffMultiplier: 2,      // Exponential backoff multiplier
-  trials: 1,                      // Number of trials per eval
-  trialPassThreshold: 0.5,        // Required pass rate for trials
-  verbose: false,                 // Verbose output
-  preserveWorkspaces: false,      // Keep workspace dirs after eval
-  outputDir: './__evals__/results',
+  agentType: "generic", // 'claude-code' | 'generic' - use 'claude-code' for automatic JSONL tool extraction
+  testDir: "./__evals__", // Directory containing eval cases
+  rubricsDir: "./__evals__/rubrics", // Directory for LLM judge rubrics
+  testMatch: ["**/*.eval.json"], // Glob patterns for eval files
+  parallel: true, // Run evals in parallel
+  maxConcurrency: 3, // Max concurrent evals
+  timeout: 300000, // Timeout per eval (ms)
+  maxRetries: 2, // Retry failed evals
+  retryDelayMs: 1000, // Initial retry delay
+  retryBackoffMultiplier: 2, // Exponential backoff multiplier
+  trials: 1, // Number of trials per eval
+  trialPassThreshold: 0.5, // Required pass rate for trials
+  verbose: false, // Verbose output
+  preserveWorkspaces: false, // Keep workspace dirs after eval (for debugging)
+  outputDir: "./__evals__/results",
 
   // Custom judges
   judges: [],
+
+  // Workspace hooks (customize workspace creation)
+  createWorkspace: async () => {
+    return { id: "my-workspace", path: "/path/to/workspace" };
+  },
+  cleanupWorkspace: async (workspace) => {
+    // Custom cleanup logic
+  },
 
   // Lifecycle hooks
   setup: async () => {},
@@ -213,7 +273,7 @@ export default defineConfig({
   // Learning system config
   learning: {
     enabled: false,
-    ruleOutputDir: './prompts',
+    ruleOutputDir: "./prompts",
     minFailuresForPattern: 2,
     autoApprove: false,
   },
@@ -222,24 +282,25 @@ export default defineConfig({
 
 ### Agent Function
 
-The agent function receives a prompt and context, and must return an `AgentResult`:
+The agent function receives a prompt and context, and must return an
+`AgentResult`:
 
 ```typescript
 interface AgentContext {
-  workingDirectory: string;  // Isolated temp directory for this eval
-  evalId: string;            // Unique eval case ID
-  evalName: string;          // Eval case name
-  sessionId?: string;        // For multi-turn sessions
-  timeout?: number;          // Eval timeout in ms
+  workingDirectory: string; // Isolated temp directory for this eval
+  evalId: string; // Unique eval case ID
+  evalName: string; // Eval case name
+  sessionId?: string; // For multi-turn sessions
+  timeout?: number; // Eval timeout in ms
 }
 
 interface AgentResult {
-  output: string;            // Agent's text output
-  success: boolean;          // Whether agent completed successfully
-  toolCalls?: ToolCall[];    // Record of tool invocations
-  sessionId?: string;        // Session ID for multi-turn
-  error?: Error;             // Error if failed
-  duration?: number;         // Execution time in ms
+  output: string; // Agent's text output
+  success: boolean; // Whether agent completed successfully
+  toolCalls?: ToolCall[]; // Record of tool invocations
+  sessionId?: string; // Session ID for multi-turn
+  error?: Error; // Error if failed
+  duration?: number; // Execution time in ms
   usage?: {
     inputTokens: number;
     outputTokens: number;
@@ -252,6 +313,8 @@ interface ToolCall {
   input: unknown;
   output?: unknown;
   isError?: boolean;
+  timestamp?: number; // When the tool was called
+  duration?: number; // How long the call took (ms)
 }
 ```
 
@@ -342,7 +405,7 @@ Validates request routing to appropriate agents.
 
 ### Multi-Turn (`multi-turn`)
 
-Validates multi-turn conversational flows.
+Validates multi-turn conversational flows with optional per-turn evaluation.
 
 ```json
 {
@@ -353,17 +416,20 @@ Validates multi-turn conversational flows.
   "turns": [
     {
       "prompt": "Create a basic add function",
-      "expectedBehavior": "Creates initial function"
+      "expectedBehavior": "Creates initial function",
+      "judges": ["file-existence"]
     },
     {
       "prompt": "Add input validation",
-      "expectedBehavior": "Adds type checking"
+      "expectedBehavior": "Adds type checking",
+      "judges": ["pattern-match"]
     },
     {
       "prompt": "Add JSDoc comments",
       "expectedBehavior": "Documents the function"
     }
   ],
+  "judges": ["syntax-validation"],
   "sessionPersistence": true
 }
 ```
@@ -372,16 +438,16 @@ Validates multi-turn conversational flows.
 
 All eval cases support these fields:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Unique identifier |
-| `name` | string | Display name |
-| `description` | string | Description of what's being tested |
-| `category` | string | One of: basic, tool, code-gen, routing, multi-turn |
-| `tags` | string[] | Optional tags for filtering |
-| `enabled` | boolean | Enable/disable (default: true) |
-| `timeout` | number | Override default timeout (ms) |
-| `trials` | object | `{ count: number, passThreshold: number }` |
+| Field         | Type     | Description                                        |
+| ------------- | -------- | -------------------------------------------------- |
+| `id`          | string   | Unique identifier                                  |
+| `name`        | string   | Display name                                       |
+| `description` | string   | Description of what's being tested                 |
+| `category`    | string   | One of: basic, tool, code-gen, routing, multi-turn |
+| `tags`        | string[] | Optional tags for filtering                        |
+| `enabled`     | boolean  | Enable/disable (default: true)                     |
+| `timeout`     | number   | Override default timeout (ms)                      |
+| `trials`      | object   | `{ count: number, passThreshold: number }`         |
 
 ## Built-in Judges
 
@@ -409,6 +475,60 @@ Validates file content matches expected patterns.
 - Supports multiline matching
 - Passes if ≥80% of patterns found
 
+### syntax-validation
+
+Validates generated code has valid syntax.
+
+- Supports TypeScript, JavaScript, JSX, TSX
+- Uses Babel parser for accurate syntax checking
+- Reports specific syntax errors
+
+### skill-invocation
+
+Validates that specific skills were invoked.
+
+- Checks `expectedSkills` against actual skill calls
+- Supports `minCalls` constraints
+
+### LLM Judges (Rubric-based)
+
+Evaluate outputs using LLM with custom rubrics:
+
+- `llm-code-quality` - Evaluate code against code-quality.md rubric
+- `llm-response-quality` - Evaluate responses against response-quality.md rubric
+- `llm-routing-quality` - Evaluate routing decisions
+- `llm-conversation-quality` - Evaluate conversation quality
+
+Configure rubrics directory in your config:
+
+```typescript
+export default defineConfig({
+  rubricsDir: './__evals__/rubrics',
+  // ...
+});
+```
+
+Create rubric files (e.g., `code-quality.md`) with evaluation criteria.
+
+### Reference Solutions
+
+Use `referenceSolution` in eval cases for pairwise comparison:
+
+```json
+{
+  "id": "create-function",
+  "category": "code-gen",
+  "prompt": "Create an add function",
+  "referenceSolution": {
+    "description": "A properly typed add function",
+    "code": "function add(a: number, b: number): number {\n  return a + b;\n}"
+  },
+  "judges": ["llm-code-quality"]
+}
+```
+
+LLM judges will compare the agent's output against the reference solution.
+
 ## Custom Judges
 
 Create custom judges by extending `BaseJudge`:
@@ -420,16 +540,16 @@ import {
   type JudgeContext,
   type JudgeResult,
   type JudgeType,
-} from '@pooflabs/vibe-check';
+} from "@pooflabs/vibe-check";
 
 class ResponseLengthJudge extends BaseJudge {
-  id = 'response-length';
-  name = 'Response Length Judge';
-  type: JudgeType = 'code';
+  id = "response-length";
+  name = "Response Length Judge";
+  type: JudgeType = "code";
 
   constructor(
     private minLength: number = 10,
-    private maxLength: number = 1000
+    private maxLength: number = 1000,
   ) {
     super();
   }
@@ -476,10 +596,10 @@ export default defineConfig({
 
 ```typescript
 interface JudgeContext {
-  evalCase: EvalCase;           // The eval case being judged
+  evalCase: EvalCase; // The eval case being judged
   executionResult: ExecutionResult;
-  workingDirectory: string;     // Workspace path
-  turnIndex?: number;           // For multi-turn evals
+  workingDirectory: string; // Workspace path
+  turnIndex?: number; // For multi-turn evals
 }
 
 interface ExecutionResult {
@@ -491,12 +611,20 @@ interface ExecutionResult {
   numTurns?: number;
   sessionId?: string;
   workingDirectory?: string;
+  transcript?: Transcript; // Full conversation transcript
+  progressUpdates?: ProgressRecord[]; // Progress tracking
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalCostUsd?: number;
+  };
 }
 ```
 
 ## Learning System
 
-The learning system automatically analyzes test failures and generates prompt improvements to enhance your agent's performance over time.
+The learning system automatically analyzes test failures and generates prompt
+improvements to enhance your agent's performance over time.
 
 ### How It Works
 
@@ -515,9 +643,9 @@ Enable learning in your config:
 export default defineConfig({
   learning: {
     enabled: true,
-    ruleOutputDir: './prompts',           // Where to save rules
-    minFailuresForPattern: 2,             // Min failures to form a pattern
-    autoApprove: false,                   // Require manual review
+    ruleOutputDir: "./prompts", // Where to save rules
+    minFailuresForPattern: 2, // Min failures to form a pattern
+    autoApprove: false, // Require manual review
   },
   // ...
 });
@@ -673,19 +801,19 @@ Use vibe-check programmatically in your code:
 
 ```typescript
 import {
+  defineConfig,
   EvalRunner,
   loadConfig,
   loadEvalCases,
-  defineConfig,
-} from '@pooflabs/vibe-check';
+} from "@pooflabs/vibe-check";
 
 // Load and run
-const config = await loadConfig('./vibe-check.config.ts');
+const config = await loadConfig("./vibe-check.config.ts");
 const runner = new EvalRunner(config);
 
 const result = await runner.run({
-  categories: ['code-gen'],
-  tags: ['critical'],
+  categories: ["code-gen"],
+  tags: ["critical"],
 });
 
 console.log(`Pass rate: ${result.passRate * 100}%`);
@@ -708,27 +836,40 @@ for (const evalResult of result.results) {
 
 ```typescript
 // Configuration
-export { defineConfig, defaultConfig, loadConfig };
-export type { VibeCheckConfig, ResolvedConfig, AgentFunction, AgentContext, AgentResult };
+export { defaultConfig, defineConfig, loadConfig };
+export type {
+  AgentContext,
+  AgentFunction,
+  AgentResult,
+  ResolvedConfig,
+  VibeCheckConfig,
+};
 
 // Schemas
-export { parseEvalCase, isToolEval, isCodeGenEval, isRoutingEval, isMultiTurnEval, isBasicEval };
-export type { EvalCase, EvalCategory, ToolEvalCase, CodeGenEvalCase, /* ... */ };
+export {
+  isBasicEval,
+  isCodeGenEval,
+  isMultiTurnEval,
+  isRoutingEval,
+  isToolEval,
+  parseEvalCase,
+};
+export type { CodeGenEvalCase, EvalCase, EvalCategory, ToolEvalCase /* ... */ };
 
 // Runner
 export { EvalRunner };
-export type { RunnerOptions, EvalSuiteResult };
+export type { EvalSuiteResult, RunnerOptions };
 
 // Judges
-export { BaseJudge, JudgeRegistry, getJudgeRegistry, resetJudgeRegistry };
-export type { Judge, JudgeType, JudgeContext, JudgeResult, ExecutionResult };
+export { BaseJudge, getJudgeRegistry, JudgeRegistry, resetJudgeRegistry };
+export type { ExecutionResult, Judge, JudgeContext, JudgeResult, JudgeType };
 
 // Harness
-export { TestHarness, WorkspaceManager };
-export type { HarnessOptions, EvalWorkspace };
+export { TestHarness };
+export type { EvalWorkspace, HarnessOptions };
 
 // Utils
-export { loadEvalCases, loadEvalCase, groupByCategory };
+export { groupByCategory, loadEvalCase, loadEvalCases };
 ```
 
 ## Examples
@@ -772,6 +913,18 @@ bun run vibe-check run
 
 **Use case**: Domain-specific validation, custom metrics
 
+### 🔄 [Multi-Turn](./examples/multi-turn)
+
+Multi-turn conversation testing with session persistence:
+
+```bash
+cd examples/multi-turn
+bun install
+bun run vibe-check run
+```
+
+**Use case**: Conversational agents, iterative refinement flows
+
 ## Performance Tips
 
 Optimize your eval suite for speed and reliability:
@@ -781,7 +934,7 @@ Optimize your eval suite for speed and reliability:
 ```typescript
 export default defineConfig({
   parallel: true,
-  maxConcurrency: 5,  // Balance between speed and resource usage
+  maxConcurrency: 5, // Balance between speed and resource usage
 });
 ```
 
@@ -825,13 +978,14 @@ export default defineConfig({
 
 ```typescript
 export default defineConfig({
-  maxRetries: 2,              // Retry failed tests
-  retryDelayMs: 1000,         // Initial delay
-  retryBackoffMultiplier: 2,  // Exponential backoff
+  maxRetries: 2, // Retry failed tests
+  retryDelayMs: 1000, // Initial delay
+  retryBackoffMultiplier: 2, // Exponential backoff
 });
 ```
 
-**Tip**: Enable retries for flaky network/API tests, disable for deterministic tests.
+**Tip**: Enable retries for flaky network/API tests, disable for deterministic
+tests.
 
 ### Trial Optimization
 
@@ -849,20 +1003,62 @@ export default defineConfig({
 }
 ```
 
-**Tip**: Use trials for non-deterministic agent behavior, but avoid over-reliance.
+**Tip**: Use trials for non-deterministic agent behavior, but avoid
+over-reliance.
 
 ### Workspace Management
 
+By default, vibe-check creates temporary workspaces and cleans them up after
+each eval. Use `preserveWorkspaces: true` for debugging:
+
 ```typescript
 export default defineConfig({
-  preserveWorkspaces: false,  // Clean up temp dirs (default)
+  preserveWorkspaces: true, // Keep workspaces for inspection
+  // ...
 });
-
-// Enable for debugging
-preserveWorkspaces: true,  // Keep failed test workspaces
 ```
 
-**Tip**: Enable `preserveWorkspaces` when debugging, disable in CI for disk space.
+### Workspace Hooks
+
+For full control over workspace lifecycle, use `createWorkspace` and
+`cleanupWorkspace` hooks:
+
+```typescript
+import { defineConfig, type EvalWorkspace } from "@pooflabs/vibe-check";
+import * as fs from "fs/promises";
+import * as path from "path";
+import { execFile } from "child_process";
+import { promisify } from "util";
+
+const execFileAsync = promisify(execFile);
+
+export default defineConfig({
+  createWorkspace: async (): Promise<EvalWorkspace> => {
+    const id = `ws-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const wsPath = path.join(process.cwd(), "__evals__/results/workspaces", id);
+
+    // Copy your template (including node_modules for fast setup)
+    await fs.cp("./template", wsPath, { recursive: true });
+
+    // Optional: install dependencies if not included in template
+    // await execFileAsync('npm', ['install'], { cwd: wsPath });
+
+    return { id, path: wsPath };
+  },
+
+  cleanupWorkspace: async (workspace: EvalWorkspace): Promise<void> => {
+    await fs.rm(workspace.path, { recursive: true, force: true });
+  },
+  // ...
+});
+```
+
+**Benefits of custom workspace hooks:**
+
+- Use any package manager (npm, yarn, pnpm, bun)
+- Pre-install dependencies in template for faster workspace setup
+- Custom setup logic per workspace
+- Full control over cleanup behavior
 
 ## Troubleshooting
 
@@ -883,8 +1079,8 @@ vibe-check run --config ./path/to/config.ts
 ```typescript
 // Check testDir and testMatch in config
 export default defineConfig({
-  testDir: './__evals__',       // Must exist
-  testMatch: ['**/*.eval.json'], // Must match file names
+  testDir: "./__evals__", // Must exist
+  testMatch: ["**/*.eval.json"], // Must match file names
 });
 ```
 
@@ -923,8 +1119,8 @@ bun pm ls | grep anthropic
 // Reduce concurrency for stability
 export default defineConfig({
   parallel: true,
-  maxConcurrency: 2,  // Lower for CI environments
-  maxRetries: 3,      // More retries for flaky CI networks
+  maxConcurrency: 2, // Lower for CI environments
+  maxRetries: 3, // More retries for flaky CI networks
 });
 ```
 
@@ -962,15 +1158,19 @@ vibe-check run --config config-with-preserve-workspaces.ts
 
 **Q: What agent frameworks does vibe-check support?**
 
-A: Any agent that can be wrapped in an `async (prompt, context) => AgentResult` function. Built-in support for Claude SDK, but works with LangChain, custom agents, or any LLM framework.
+A: Any agent that can be wrapped in an `async (prompt, context) => AgentResult`
+function. Built-in support for Claude SDK, but works with LangChain, custom
+agents, or any LLM framework.
 
 **Q: Can I use this with other LLMs (OpenAI, Gemini, etc.)?**
 
-A: Yes! The framework is LLM-agnostic. Just implement the agent function to call your preferred LLM.
+A: Yes! The framework is LLM-agnostic. Just implement the agent function to call
+your preferred LLM.
 
 **Q: Do I need Bun or can I use Node/npm?**
 
-A: While optimized for Bun, vibe-check works with Node.js 18+ and npm/pnpm. Bun is recommended for best performance.
+A: While optimized for Bun, vibe-check works with Node.js 18+ and npm/pnpm. Bun
+is recommended for best performance.
 
 ### Configuration
 
@@ -989,7 +1189,8 @@ A: Use `code-gen` category with multiple `targetFiles`:
 
 **Q: Can I use custom validation logic?**
 
-A: Yes! Create custom judges extending `BaseJudge`. See [Custom Judges](#custom-judges).
+A: Yes! Create custom judges extending `BaseJudge`. See
+[Custom Judges](#custom-judges).
 
 **Q: How do I handle authentication/secrets in tests?**
 
@@ -1008,11 +1209,13 @@ export default defineConfig({
 
 **Q: Does the learning system modify my prompts automatically?**
 
-A: No! It generates rule suggestions that require human review (unless `autoApprove: true`). You control what gets integrated.
+A: No! It generates rule suggestions that require human review (unless
+`autoApprove: true`). You control what gets integrated.
 
 **Q: How many failures do I need to generate useful rules?**
 
-A: Start with 10+ failures. The system works best with 20-50 failures showing clear patterns.
+A: Start with 10+ failures. The system works best with 20-50 failures showing
+clear patterns.
 
 **Q: Can I use production logs for learning?**
 
@@ -1022,7 +1225,8 @@ A: Yes! Export failures to JSONL format and use `--source jsonl`.
 
 **Q: How fast does vibe-check run?**
 
-A: Depends on agent speed and concurrency. With `maxConcurrency: 5` and Claude SDK, expect ~10-20 evals/minute.
+A: Depends on agent speed and concurrency. With `maxConcurrency: 5` and Claude
+SDK, expect ~10-20 evals/minute.
 
 **Q: Can I run tests in CI/CD?**
 
@@ -1034,13 +1238,15 @@ vibe-check run || exit 1  # Fails CI if tests fail
 
 **Q: How do I speed up slow test suites?**
 
-A: See [Performance Tips](#performance-tips). Key strategies: increase concurrency, use selective runs, optimize timeouts.
+A: See [Performance Tips](#performance-tips). Key strategies: increase
+concurrency, use selective runs, optimize timeouts.
 
 ### Debugging
 
 **Q: Where are test artifacts stored?**
 
-A: By default in `__evals__/results/`. Workspaces are temporary unless `preserveWorkspaces: true`.
+A: By default in `__evals__/results/`. Workspaces are temporary unless
+`preserveWorkspaces: true`.
 
 **Q: How do I debug a single failing test?**
 
@@ -1242,20 +1448,19 @@ MIT License
 
 Copyright (c) 2024 Poof Labs
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

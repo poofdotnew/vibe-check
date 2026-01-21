@@ -147,14 +147,21 @@ export interface JudgeResult {
   details?: Record<string, unknown>;
 }
 
+export type ErrorType = 'api' | 'timeout' | 'judge' | 'unknown';
+
 export interface EvalCaseResult {
   evalCase: EvalCase;
   success: boolean;
   output: string;
   duration: number;
   judgeResults: JudgeResult[];
-  toolCalls?: Array<{ toolName: string; input: unknown; output?: unknown; isError?: boolean }>;
+  toolCalls?: Array<{ toolName: string; input: unknown; output?: unknown; isError?: boolean; timestamp?: number; duration?: number }>;
   error?: Error;
+  errorType?: ErrorType;
   retryCount?: number;
   trialResults?: boolean[];
+  /** Whether this test passed on a retry (indicates flaky test) */
+  flaky?: boolean;
+  /** Error messages from each failed retry attempt */
+  retryErrors?: string[];
 }

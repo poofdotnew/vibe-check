@@ -169,9 +169,9 @@ describe('JudgeRegistry', () => {
     test('returns empty array for type with no judges', () => {
       const registry = new JudgeRegistry();
 
-      const llmJudges = registry.listByType('llm');
+      const hybridJudges = registry.listByType('hybrid');
 
-      expect(llmJudges).toEqual([]);
+      expect(hybridJudges).toEqual([]);
     });
   });
 

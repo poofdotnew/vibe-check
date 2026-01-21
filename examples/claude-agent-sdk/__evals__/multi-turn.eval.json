@@ -3,18 +3,15 @@
   "name": "Iterative Code Refinement",
   "description": "Test multi-turn conversation for code improvements",
   "category": "multi-turn",
+  "timeout": 180000,
   "turns": [
     {
-      "prompt": "Create a simple add function in src/math.ts",
+      "prompt": "Create a file called math.ts with a simple add function that takes two numbers",
       "expectedBehavior": "Should create a basic add function"
     },
     {
-      "prompt": "Add error handling for non-number inputs",
-      "expectedBehavior": "Should modify the function to validate inputs"
-    },
-    {
-      "prompt": "Add JSDoc comments to the function",
-      "expectedBehavior": "Should add documentation comments"
+      "prompt": "Add TypeScript type annotations to the add function",
+      "expectedBehavior": "Should add type annotations"
     }
   ],
   "sessionPersistence": true,

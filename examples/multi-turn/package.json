@@ -1,0 +1,11 @@
+{
+  "name": "vibe-check-multi-turn-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "vibe-check": "vibe-check"
+  },
+  "dependencies": {
+    "@pooflabs/vibe-check": "file:../.."
+  }
+}

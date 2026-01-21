@@ -5,7 +5,7 @@
  * FailureInput → FailureExplanation → FailurePattern → ProposedRule
  */
 
-import type { FailureInput, ToolCall } from './data-sources/types.js';
+import type { FailureInput } from './data-sources/types.js';
 
 /**
  * LLM-generated explanation of why a failure occurred.

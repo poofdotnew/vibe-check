@@ -3,7 +3,7 @@ import * as path from 'path';
 import { glob } from 'glob';
 import { EvalCase, parseEvalCase, EvalCategory } from '../config/schemas.js';
 
-export interface LoadOptions {
+export interface EvalLoadOptions {
   testDir: string;
   testMatch: string[];
   categories?: EvalCategory[];
@@ -12,7 +12,10 @@ export interface LoadOptions {
   enabledOnly?: boolean;
 }
 
-export async function loadEvalCases(options: LoadOptions): Promise<EvalCase[]> {
+/** @deprecated Use EvalLoadOptions instead */
+export type LoadOptions = EvalLoadOptions;
+
+export async function loadEvalCases(options: EvalLoadOptions): Promise<EvalCase[]> {
   const { testDir, testMatch } = options;
 
   const patterns = testMatch.map(pattern => path.join(testDir, pattern));
@@ -34,12 +37,12 @@ export async function loadEvalCases(options: LoadOptions): Promise<EvalCase[]> {
   return filterEvalCases(evalCases, options);
 }
 
-export async function loadEvalCase(id: string, options: LoadOptions): Promise<EvalCase | null> {
+export async function loadEvalCase(id: string, options: EvalLoadOptions): Promise<EvalCase | null> {
   const cases = await loadEvalCases({ ...options, ids: [id] });
   return cases[0] || null;
 }
 
-function filterEvalCases(cases: EvalCase[], options: LoadOptions): EvalCase[] {
+function filterEvalCases(cases: EvalCase[], options: EvalLoadOptions): EvalCase[] {
   let filtered = cases;
 
   if (options.enabledOnly !== false) {
