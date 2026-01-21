@@ -66,7 +66,6 @@ export { JudgeRegistry, getJudgeRegistry, resetJudgeRegistry } from './judges/ju
 export { TestHarness } from './harness/test-harness.js';
 export type { TestHarnessOptions, HarnessOptions } from './harness/test-harness.js';
 
-
 // Utils
 export { loadEvalCases, loadEvalCase, groupByCategory } from './utils/eval-loader.js';
 export type { EvalLoadOptions, LoadOptions } from './utils/eval-loader.js';
@@ -80,7 +79,12 @@ export {
   printSummary,
   generateJsonReport,
 } from './utils/reporter.js';
-export type { EvalReportOptions, ReportOptions, CategorySummary, ErrorSummary } from './utils/reporter.js';
+export type {
+  EvalReportOptions,
+  ReportOptions,
+  CategorySummary,
+  ErrorSummary,
+} from './utils/reporter.js';
 
 export {
   aggregateResults,
@@ -88,3 +92,8 @@ export {
   calculateNonDeterminismMetrics,
 } from './utils/result-aggregator.js';
 export type { AggregatedResult, AggregatedSummary } from './utils/result-aggregator.js';
+
+// Adapters
+export { PythonAgentAdapter } from './adapters/python-adapter.js';
+export type { PythonAdapterOptions } from './adapters/python-adapter.js';
+export type { AgentRequest, AgentResponse } from './adapters/types.js';

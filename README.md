@@ -91,8 +91,8 @@ agent evaluation:
   suggests prompt improvements
 - **Production-Ready**: Parallel execution, retries, isolated workspaces, and
   detailed reporting
-- **Framework Agnostic**: Works with Claude SDK, custom agents, or any
-  LLM-powered system
+- **Framework Agnostic**: Works with Claude SDK (TypeScript & Python), custom
+  agents, or any LLM-powered system
 - **Developer-First**: TypeScript-native with full type safety and intuitive
   APIs
 
@@ -869,6 +869,10 @@ export type { EvalWorkspace, HarnessOptions };
 
 // Utils
 export { groupByCategory, loadEvalCase, loadEvalCases };
+
+// Adapters (for multi-language support)
+export { PythonAgentAdapter } from '@pooflabs/vibe-check/adapters';
+export type { PythonAdapterOptions, AgentRequest, AgentResponse } from '@pooflabs/vibe-check/adapters';
 ```
 
 ## Examples
@@ -889,7 +893,7 @@ bun run vibe-check run
 
 ### 🤖 [Claude Agent SDK Integration](./examples/claude-agent-sdk)
 
-Full-featured Claude SDK integration with tool tracking:
+Full-featured Claude SDK integration with tool tracking (TypeScript):
 
 ```bash
 cd examples/claude-agent-sdk
@@ -899,6 +903,37 @@ bun run vibe-check run
 ```
 
 **Use case**: Production Claude agents, comprehensive testing
+
+### 🐍 [Python Agent SDK Integration](./examples/python-agent)
+
+Python SDK integration using the process-based adapter:
+
+```bash
+cd examples/python-agent
+bun install
+./setup.sh  # Creates Python venv and installs claude-agent-sdk
+export ANTHROPIC_API_KEY=your_key
+bun run vibe-check run
+```
+
+**Use case**: Python-based Claude agents, multi-language support
+
+The Python adapter uses a JSON protocol over stdin/stdout to communicate with Python agent scripts:
+
+```typescript
+import { PythonAgentAdapter } from '@pooflabs/vibe-check/adapters';
+
+const adapter = new PythonAgentAdapter({
+  scriptPath: './agent.py',
+  pythonPath: './.venv/bin/python',
+  env: { ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY },
+});
+
+export default defineConfig({
+  agent: adapter.createAgent(),
+  agentType: 'claude-code',
+});
+```
 
 #### Eval Examples by Category and Judge
 
@@ -1179,8 +1214,8 @@ vibe-check run --config config-with-preserve-workspaces.ts
 **Q: What agent frameworks does vibe-check support?**
 
 A: Any agent that can be wrapped in an `async (prompt, context) => AgentResult`
-function. Built-in support for Claude SDK, but works with LangChain, custom
-agents, or any LLM framework.
+function. Built-in support for Claude SDK (TypeScript and Python via adapters),
+but works with LangChain, custom agents, or any LLM framework.
 
 **Q: Can I use this with other LLMs (OpenAI, Gemini, etc.)?**
 
@@ -1191,6 +1226,12 @@ your preferred LLM.
 
 A: While optimized for Bun, vibe-check works with Node.js 18+ and npm/pnpm. Bun
 is recommended for best performance.
+
+**Q: Can I use Python agents with vibe-check?**
+
+A: Yes! Use the `PythonAgentAdapter` from `@pooflabs/vibe-check/adapters`. It
+spawns Python scripts as subprocesses and communicates via JSON over stdin/stdout.
+See the [Python Agent SDK Integration](./examples/python-agent) example.
 
 ### Configuration
 

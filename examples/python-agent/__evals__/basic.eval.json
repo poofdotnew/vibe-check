@@ -1,0 +1,14 @@
+{
+  "id": "python-agent-basic",
+  "name": "Python Agent Basic Test",
+  "description": "Verify Python agent can handle a simple coding task",
+  "category": "basic",
+  "prompt": "Write a simple Python function that adds two numbers and returns the result. Include type hints.",
+  "expectedBehavior": "Should return valid Python code with type hints for an add function",
+  "referenceSolution": {
+    "description": "A properly typed Python add function",
+    "code": "def add(a: int, b: int) -> int:\n    return a + b"
+  },
+  "judges": ["llm-code-quality"],
+  "tags": ["basic", "python", "llm-judge"]
+}

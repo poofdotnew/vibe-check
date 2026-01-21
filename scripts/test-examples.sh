@@ -37,8 +37,8 @@ FAILED_EXAMPLES=""
 for example in "$EXAMPLES_DIR"/*/; do
   example_name=$(basename "$example")
 
-  # Skip claude-agent-sdk if no API key (requires real API)
-  if [ "$example_name" = "claude-agent-sdk" ]; then
+  # Skip examples requiring API key if not set
+  if [ "$example_name" = "claude-agent-sdk" ] || [ "$example_name" = "python-agent" ]; then
     if [ -z "$ANTHROPIC_API_KEY" ]; then
       echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       echo "Skipping: $example_name (no ANTHROPIC_API_KEY)"
@@ -69,6 +69,20 @@ for example in "$EXAMPLES_DIR"/*/; do
       FAILED_EXAMPLES="$FAILED_EXAMPLES $example_name"
       echo ""
       continue
+    fi
+  fi
+
+  # Setup Python virtual environment for python-agent example
+  if [ "$example_name" = "python-agent" ]; then
+    if [ "$CLEAN_INSTALL" = true ] || [ ! -d ".venv" ]; then
+      echo "Setting up Python virtual environment..."
+      if ! ./setup.sh 2>&1; then
+        echo "✗ $example_name failed (Python setup error)"
+        ((FAILED++))
+        FAILED_EXAMPLES="$FAILED_EXAMPLES $example_name"
+        echo ""
+        continue
+      fi
     fi
   fi
 

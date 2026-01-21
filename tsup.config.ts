@@ -7,12 +7,14 @@ export default defineConfig({
     'bin/cli': 'src/bin/cli.ts',
     'judges/index': 'src/judges/index.ts',
     'learning/index': 'src/learning/index.ts',
+    'adapters/index': 'src/adapters/index.ts',
   },
   format: ['esm'],
   dts: {
     entry: {
       index: 'src/index.ts',
       'judges/index': 'src/judges/index.ts',
+      'adapters/index': 'src/adapters/index.ts',
     },
   },
   sourcemap: true,
