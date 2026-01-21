@@ -46,8 +46,6 @@
 - [Performance Tips](#performance-tips)
 - [Troubleshooting](#troubleshooting)
 - [FAQ](#faq)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## Background
 
@@ -127,7 +125,8 @@ agent evaluation:
 - **5 Eval Categories**: Tool usage, code generation, routing, multi-turn
   conversations, and basic evaluations
 - **7 Built-in Judges**: File existence, tool invocation, pattern matching,
-  syntax validation, skill invocation, and 4 LLM-based judges with rubric support
+  syntax validation, skill invocation, and 4 LLM-based judges with rubric
+  support
 - **Automatic Tool Extraction**: For `claude-code` agents, tool calls are
   automatically extracted from JSONL logs
 - **Extensible Judge System**: Create custom judges for specialized validation
@@ -503,7 +502,7 @@ Configure rubrics directory in your config:
 
 ```typescript
 export default defineConfig({
-  rubricsDir: './__evals__/rubrics',
+  rubricsDir: "./__evals__/rubrics",
   // ...
 });
 ```
@@ -1378,89 +1377,3 @@ jobs:
 - Cache dependencies for faster runs
 - Store API keys in secrets/environment variables
 - Consider running critical tests only on PRs, full suite on main
-
-## Contributing
-
-We welcome contributions! Here's how to get started:
-
-### Quick Start
-
-1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/vibe-check.git`
-3. Install dependencies: `bun install`
-4. Create a feature branch: `git checkout -b feature/amazing-feature`
-
-### Development Workflow
-
-```bash
-# Run tests
-bun test
-
-# Watch mode
-bun test --watch
-
-# Type check
-bun run typecheck
-
-# Build
-bun run build
-
-# Test CLI locally
-bun run dist/bin/vibe-check.js run
-```
-
-### Making Changes
-
-1. Make your changes in `src/`
-2. Add tests in `src/__tests__/`
-3. Ensure tests pass: `bun test`
-4. Ensure types check: `bun run typecheck`
-5. Update documentation if needed
-6. Commit with clear message: `git commit -m 'feat: add amazing feature'`
-7. Push to your branch: `git push origin feature/amazing-feature`
-8. Open a Pull Request
-
-### Contribution Guidelines
-
-- **TypeScript**: Write strict TypeScript with full type safety
-- **Tests**: Add tests for new features and bug fixes
-- **Code Style**: Follow existing patterns and conventions
-- **Documentation**: Update README for user-facing changes
-- **Commits**: Keep commits focused and atomic
-- **Breaking Changes**: Document breaking changes clearly
-
-### Areas We Need Help
-
-- Additional built-in judges
-- More eval case examples
-- Integration guides for popular frameworks
-- Performance optimizations
-- Documentation improvements
-- Bug reports and fixes
-
-### Code of Conduct
-
-Be respectful, inclusive, and collaborative. We're building this together!
-
-## License
-
-MIT License
-
-Copyright (c) 2024 Poof Labs
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
