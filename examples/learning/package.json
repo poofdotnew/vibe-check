@@ -1,0 +1,14 @@
+{
+  "name": "vibe-check-learning-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "vibe-check": "vibe-check",
+    "run": "vibe-check run",
+    "learn:stats": "vibe-check learn stats",
+    "learn:analyze": "vibe-check learn analyze"
+  },
+  "dependencies": {
+    "@pooflabs/vibe-check": "file:../.."
+  }
+}

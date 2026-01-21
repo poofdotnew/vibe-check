@@ -980,6 +980,25 @@ bun run vibe-check run
 
 **Use case**: Conversational agents, iterative refinement flows
 
+### 📚 [Learning System](./examples/learning)
+
+Demonstrates the learning system with a mock agent that has deliberate flaws:
+
+```bash
+cd examples/learning
+bun install
+bun run vibe-check run           # Runs evals (some will fail by design)
+bun run vibe-check learn stats   # Shows learning system status
+bun run vibe-check learn analyze # Analyzes failures (requires ANTHROPIC_API_KEY)
+```
+
+**Use case**: Understanding the learning system, testing failure analysis pipeline
+
+The example includes:
+- A mock agent with predictable flaws (uses Read instead of Write, refuses delete operations, etc.)
+- Pre-configured eval cases designed to fail
+- Pre-generated results so learning commands work immediately
+
 ## Performance Tips
 
 Optimize your eval suite for speed and reliability:

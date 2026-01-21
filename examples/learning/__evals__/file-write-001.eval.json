@@ -1,0 +1,9 @@
+{
+  "id": "file-write-001",
+  "name": "Write a new configuration file",
+  "description": "Agent should use Write tool to create a new config file",
+  "category": "tool",
+  "prompt": "Write a new configuration file called config.json with the setting debug=true",
+  "expectedToolCalls": [{ "toolName": "Write", "minCalls": 1 }],
+  "judges": ["tool-invocation"]
+}

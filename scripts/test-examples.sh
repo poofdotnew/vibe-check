@@ -88,7 +88,24 @@ for example in "$EXAMPLES_DIR"/*/; do
 
   # Run vibe-check
   echo "Running evals..."
-  if bun run vibe-check run 2>&1; then
+
+  # Learning example: failures are expected, test the learning system instead
+  if [ "$example_name" = "learning" ]; then
+    # Run evals (expect failures)
+    bun run vibe-check run 2>&1 || true
+
+    # Verify learning stats works and shows failures
+    echo "Verifying learning system..."
+    stats_output=$(bun run vibe-check learn stats 2>&1)
+    if echo "$stats_output" | grep -q "eval.*failures"; then
+      echo "✓ $example_name passed (learning system working)"
+      ((PASSED++))
+    else
+      echo "✗ $example_name failed (learning system not detecting failures)"
+      ((FAILED++))
+      FAILED_EXAMPLES="$FAILED_EXAMPLES $example_name"
+    fi
+  elif bun run vibe-check run 2>&1; then
     echo "✓ $example_name passed"
     ((PASSED++))
   else

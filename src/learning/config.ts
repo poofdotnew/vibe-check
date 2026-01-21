@@ -68,9 +68,10 @@ export interface LearningConfig {
   evalResultsDir: string;
 }
 
-const LEARNING_DIR = path.join(__dirname);
+const PROJECT_DIR = process.cwd();
+const LEARNING_DIR = path.join(PROJECT_DIR, '.vibe-check', 'learning');
 const RULES_DIR = path.join(LEARNING_DIR, 'rules');
-const EVAL_RESULTS_DIR = path.join(__dirname, '..', 'results');
+const EVAL_RESULTS_DIR = path.join(PROJECT_DIR, '__evals__', 'results');
 
 export const DEFAULT_LEARNING_CONFIG: LearningConfig = {
   // Analysis settings
@@ -90,7 +91,7 @@ export const DEFAULT_LEARNING_CONFIG: LearningConfig = {
 
   // Directories
   learningDir: LEARNING_DIR,
-  promptsDir: path.join(LEARNING_DIR, 'prompts'),
+  promptsDir: path.join(PROJECT_DIR, 'prompts'),
   rulesDir: RULES_DIR,
   pendingDir: path.join(RULES_DIR, 'pending'),
   approvedDir: path.join(RULES_DIR, 'approved'),
@@ -103,9 +104,7 @@ export const DEFAULT_LEARNING_CONFIG: LearningConfig = {
 /**
  * Get the learning configuration, optionally with overrides
  */
-export function getLearningConfig(
-  overrides?: Partial<LearningConfig>
-): LearningConfig {
+export function getLearningConfig(overrides?: Partial<LearningConfig>): LearningConfig {
   return {
     ...DEFAULT_LEARNING_CONFIG,
     ...overrides,
@@ -127,23 +126,15 @@ export function getConfigFromEnv(): Partial<LearningConfig> {
   }
 
   if (process.env.LEARNING_MIN_PATTERN_SIZE) {
-    overrides.minFailuresForPattern = parseInt(
-      process.env.LEARNING_MIN_PATTERN_SIZE,
-      10
-    );
+    overrides.minFailuresForPattern = parseInt(process.env.LEARNING_MIN_PATTERN_SIZE, 10);
   }
 
   if (process.env.LEARNING_SIMILARITY_THRESHOLD) {
-    overrides.similarityThreshold = parseFloat(
-      process.env.LEARNING_SIMILARITY_THRESHOLD
-    );
+    overrides.similarityThreshold = parseFloat(process.env.LEARNING_SIMILARITY_THRESHOLD);
   }
 
   if (process.env.LEARNING_MAX_RULES) {
-    overrides.maxRulesPerIteration = parseInt(
-      process.env.LEARNING_MAX_RULES,
-      10
-    );
+    overrides.maxRulesPerIteration = parseInt(process.env.LEARNING_MAX_RULES, 10);
   }
 
   return overrides;

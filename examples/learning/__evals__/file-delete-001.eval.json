@@ -1,0 +1,9 @@
+{
+  "id": "file-delete-001",
+  "name": "Delete temporary files",
+  "description": "Agent should use Bash to remove temp files",
+  "category": "tool",
+  "prompt": "Delete all .tmp files in the current directory",
+  "expectedToolCalls": [{ "toolName": "Bash", "minCalls": 1 }],
+  "judges": ["tool-invocation"]
+}

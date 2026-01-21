@@ -1,0 +1,9 @@
+{
+  "id": "api-call-001",
+  "name": "Fetch API data",
+  "description": "Agent should use WebFetch tool for HTTP requests",
+  "category": "tool",
+  "prompt": "Fetch the current weather data from the API endpoint https://api.weather.example/current",
+  "expectedToolCalls": [{ "toolName": "WebFetch", "minCalls": 1 }],
+  "judges": ["tool-invocation"]
+}

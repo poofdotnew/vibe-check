@@ -6,16 +6,16 @@ import type { EvalCategory } from '../config/schemas.js';
 
 const program = new Command();
 
-program
-  .name('vibe-check')
-  .description('AI agent evaluation framework')
-  .version('0.1.0');
+program.name('vibe-check').description('AI agent evaluation framework').version('0.1.0');
 
 program
   .command('run')
   .description('Run eval suite')
   .option('-c, --config <path>', 'Path to config file')
-  .option('--category <categories...>', 'Filter by category (tool, code-gen, routing, multi-turn, basic)')
+  .option(
+    '--category <categories...>',
+    'Filter by category (tool, code-gen, routing, multi-turn, basic)'
+  )
   .option('--tag <tags...>', 'Filter by tag')
   .option('--id <ids...>', 'Filter by eval ID')
   .option('-v, --verbose', 'Verbose output')
@@ -155,13 +155,15 @@ const learn = program.command('learn').description('Learning loop commands');
 learn
   .command('run')
   .description('Run full learning iteration')
+  .option('-c, --config <path>', 'Path to config file')
   .option('--source <source>', 'Data source to use (eval, jsonl, both)', 'eval')
   .option('--auto-approve', 'Auto-approve high-confidence rules')
   .option('--save-pending', 'Save rules for later review')
   .action(async (options) => {
     try {
+      const config = await loadConfig(options.config);
       const { LearningRunner } = await import('../learning/learning-runner.js');
-      const runner = new LearningRunner();
+      const runner = new LearningRunner(config.learning);
 
       const sources = options.source === 'both' ? ['eval', 'jsonl'] : [options.source];
 
@@ -179,11 +181,13 @@ learn
 learn
   .command('analyze')
   .description('Analyze failures without generating rules')
+  .option('-c, --config <path>', 'Path to config file')
   .option('--source <source>', 'Data source to use (eval, jsonl, both)', 'eval')
   .action(async (options) => {
     try {
+      const config = await loadConfig(options.config);
       const { LearningRunner } = await import('../learning/learning-runner.js');
-      const runner = new LearningRunner();
+      const runner = new LearningRunner(config.learning);
 
       const sources = options.source === 'both' ? ['eval', 'jsonl'] : [options.source];
 
@@ -197,10 +201,12 @@ learn
 learn
   .command('review')
   .description('Review pending rules')
-  .action(async () => {
+  .option('-c, --config <path>', 'Path to config file')
+  .action(async (options) => {
     try {
+      const config = await loadConfig(options.config);
       const { LearningRunner } = await import('../learning/learning-runner.js');
-      const runner = new LearningRunner();
+      const runner = new LearningRunner(config.learning);
       await runner.reviewPending();
     } catch (error) {
       console.error(chalk.red('Error:'), error instanceof Error ? error.message : error);
@@ -211,10 +217,12 @@ learn
 learn
   .command('stats')
   .description('Show learning system statistics')
-  .action(async () => {
+  .option('-c, --config <path>', 'Path to config file')
+  .action(async (options) => {
     try {
+      const config = await loadConfig(options.config);
       const { LearningRunner } = await import('../learning/learning-runner.js');
-      const runner = new LearningRunner();
+      const runner = new LearningRunner(config.learning);
       await runner.showStats();
     } catch (error) {
       console.error(chalk.red('Error:'), error instanceof Error ? error.message : error);

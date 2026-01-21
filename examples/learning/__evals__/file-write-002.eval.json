@@ -1,0 +1,9 @@
+{
+  "id": "file-write-002",
+  "name": "Create a README file",
+  "description": "Agent should use Write tool to create documentation",
+  "category": "tool",
+  "prompt": "Create a README.md file explaining how to use this project",
+  "expectedToolCalls": [{ "toolName": "Write", "minCalls": 1 }],
+  "judges": ["tool-invocation"]
+}

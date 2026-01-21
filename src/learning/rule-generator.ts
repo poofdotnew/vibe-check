@@ -5,10 +5,6 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import * as dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
 import type { FailurePattern, ProposedRule } from './types.js';
 import { getLearningConfig, type LearningConfig } from './config.js';
 
@@ -41,10 +37,7 @@ export function parseRuleGenerationResponse(
       rationale: parsed.rationale || 'No rationale provided',
       expectedImpact: {
         evalIds: parsed.expectedImpact?.evalIds || fallbackEvalIds,
-        confidenceScore: Math.max(
-          0,
-          Math.min(1, parsed.expectedImpact?.confidenceScore || 0.5)
-        ),
+        confidenceScore: Math.max(0, Math.min(1, parsed.expectedImpact?.confidenceScore || 0.5)),
       },
     };
   } catch {
@@ -111,9 +104,7 @@ export class RuleGenerator {
       this.promptTemplate = await fs.readFile(promptPath, 'utf-8');
       return this.promptTemplate;
     } catch (error) {
-      throw new Error(
-        `Failed to load rule generation prompt from ${promptPath}: ${error}`
-      );
+      throw new Error(`Failed to load rule generation prompt from ${promptPath}: ${error}`);
     }
   }
 
@@ -145,16 +136,10 @@ export class RuleGenerator {
       ];
 
       for (const section of sections) {
-        const regex = new RegExp(
-          `${section}[:\\s]*[\`'"](.*?)[\`'"]`,
-          'gs'
-        );
+        const regex = new RegExp(`${section}[:\\s]*[\`'"](.*?)[\`'"]`, 'gs');
         const match = content.match(regex);
         if (match) {
-          this.currentInstructions.set(
-            section,
-            match[0].substring(0, 500) + '...'
-          );
+          this.currentInstructions.set(section, match[0].substring(0, 500) + '...');
         }
       }
     } catch (error) {
@@ -176,16 +161,13 @@ export class RuleGenerator {
     // Get current instructions for the target section
     const sectionKey = targetSection.split('.')[0];
     const currentInstructions =
-      this.currentInstructions.get(sectionKey) ||
-      '(Instructions not loaded)';
+      this.currentInstructions.get(sectionKey) || '(Instructions not loaded)';
 
     // Format failures
     const failuresFormatted = pattern.failures
       .slice(0, 5) // Limit to 5 examples
       .map((f, i) => {
-        const evalName =
-          (f.failureInput.metadata?.evalName as string) ||
-          f.failureInput.id;
+        const evalName = (f.failureInput.metadata?.evalName as string) || f.failureInput.id;
         return `#### Failure ${i + 1}
 - **Eval**: ${evalName}
 - **What Went Wrong**: ${f.explanation.whatWentWrong}
@@ -205,21 +187,14 @@ export class RuleGenerator {
       .replace('{{commonRootCauses}}', pattern.commonRootCauses.join('\n- ') || 'None identified');
 
     // Handle the failures loop
-    prompt = prompt.replace(
-      /{{#each failures}}[\s\S]*?{{\/each}}/g,
-      failuresFormatted
-    );
+    prompt = prompt.replace(/{{#each failures}}[\s\S]*?{{\/each}}/g, failuresFormatted);
 
     return prompt;
   }
 
   private parseResponse(text: string, pattern: FailurePattern): RuleGenerationResult {
     const fallbackEvalIds = pattern.failures.slice(0, 5).map((f) => f.failureInput.id);
-    return parseRuleGenerationResponse(
-      text,
-      this.getTargetSection(pattern),
-      fallbackEvalIds
-    );
+    return parseRuleGenerationResponse(text, this.getTargetSection(pattern), fallbackEvalIds);
   }
 
   /**
@@ -313,14 +288,9 @@ export class RuleGenerator {
   /**
    * Filters rules by confidence
    */
-  filterByConfidence(
-    rules: ProposedRule[],
-    minConfidence?: number
-  ): ProposedRule[] {
+  filterByConfidence(rules: ProposedRule[], minConfidence?: number): ProposedRule[] {
     const threshold = minConfidence ?? this.config.minRuleConfidence;
-    return rules.filter(
-      (r) => r.expectedImpact.confidenceScore >= threshold
-    );
+    return rules.filter((r) => r.expectedImpact.confidenceScore >= threshold);
   }
 
   /**
@@ -348,9 +318,9 @@ export class RuleGenerator {
 
       if ((hasAlways && existingHasNever) || (hasNever && existingHasAlways)) {
         // Check if they're about the same topic (rough heuristic)
-        const newWords = new Set(newLower.split(/\s+/).filter(w => w.length > 4));
-        const existingWords = new Set(existingLower.split(/\s+/).filter(w => w.length > 4));
-        const commonWords = [...newWords].filter(w => existingWords.has(w));
+        const newWords = new Set(newLower.split(/\s+/).filter((w) => w.length > 4));
+        const existingWords = new Set(existingLower.split(/\s+/).filter((w) => w.length > 4));
+        const commonWords = [...newWords].filter((w) => existingWords.has(w));
 
         if (commonWords.length > 2) {
           return true;

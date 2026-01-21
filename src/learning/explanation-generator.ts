@@ -5,10 +5,6 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import * as dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
 import type { FailureInput } from './data-sources/types.js';
 import type { FailureExplanation } from './types.js';
 import { getLearningConfig, type LearningConfig } from './config.js';
@@ -78,18 +74,13 @@ export class ExplanationGenerator {
       return this.promptTemplate;
     }
 
-    const promptPath = path.join(
-      this.config.promptsDir,
-      'failure-analysis.md'
-    );
+    const promptPath = path.join(this.config.promptsDir, 'failure-analysis.md');
 
     try {
       this.promptTemplate = await fs.readFile(promptPath, 'utf-8');
       return this.promptTemplate;
     } catch (error) {
-      throw new Error(
-        `Failed to load failure analysis prompt from ${promptPath}: ${error}`
-      );
+      throw new Error(`Failed to load failure analysis prompt from ${promptPath}: ${error}`);
     }
   }
 
@@ -102,10 +93,7 @@ export class ExplanationGenerator {
     // Format tool calls
     const toolCallsFormatted = failure.toolCalls?.length
       ? failure.toolCalls
-          .map(
-            (tc) =>
-              `- ${tc.name}${tc.error ? ` (error: ${tc.error})` : ''}`
-          )
+          .map((tc) => `- ${tc.name}${tc.error ? ` (error: ${tc.error})` : ''}`)
           .join('\n')
       : 'None';
 
@@ -121,9 +109,9 @@ export class ExplanationGenerator {
 
     // Replace template variables
     let prompt = template
-      .replace('{{evalName}}', failure.metadata?.evalName as string ?? failure.id)
+      .replace('{{evalName}}', (failure.metadata?.evalName as string) ?? failure.id)
       .replace('{{category}}', failure.category ?? 'unknown')
-      .replace('{{description}}', failure.metadata?.evalDescription as string ?? '')
+      .replace('{{description}}', (failure.metadata?.evalDescription as string) ?? '')
       .replace('{{prompt}}', failure.prompt)
       .replace('{{expectedBehavior}}', failure.expectedBehavior ?? 'Not specified')
       .replace('{{toolCalls}}', toolCallsFormatted)
@@ -212,9 +200,7 @@ export class ExplanationGenerator {
     // Process in batches
     for (let i = 0; i < failures.length; i += concurrency) {
       const batch = failures.slice(i, i + concurrency);
-      const batchResults = await Promise.all(
-        batch.map((f) => this.generateExplanation(f))
-      );
+      const batchResults = await Promise.all(batch.map((f) => this.generateExplanation(f)));
       explanations.push(...batchResults);
 
       completed += batch.length;
@@ -237,9 +223,7 @@ export class ExplanationGenerator {
   /**
    * Groups explanations by pattern category
    */
-  groupByCategory(
-    explanations: FailureExplanation[]
-  ): Record<string, FailureExplanation[]> {
+  groupByCategory(explanations: FailureExplanation[]): Record<string, FailureExplanation[]> {
     const grouped: Record<string, FailureExplanation[]> = {};
 
     for (const explanation of explanations) {

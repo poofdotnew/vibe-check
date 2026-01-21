@@ -1,0 +1,9 @@
+{
+  "id": "validation-001",
+  "name": "Validate JSON input",
+  "description": "Agent should properly validate and report issues",
+  "category": "basic",
+  "prompt": "Validate this JSON and report any errors: {invalid json here}",
+  "expectedBehavior": "Should identify the JSON as invalid and explain the syntax error",
+  "judges": ["llm"]
+}

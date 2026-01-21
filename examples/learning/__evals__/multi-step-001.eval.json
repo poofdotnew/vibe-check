@@ -1,0 +1,12 @@
+{
+  "id": "multi-step-001",
+  "name": "Read, modify, and write file",
+  "description": "Agent should perform a multi-step file operation",
+  "category": "tool",
+  "prompt": "Read the file data.json, add a new field 'version: 2', and write it back",
+  "expectedToolCalls": [
+    { "toolName": "Read", "minCalls": 1 },
+    { "toolName": "Write", "minCalls": 1 }
+  ],
+  "judges": ["tool-invocation"]
+}
