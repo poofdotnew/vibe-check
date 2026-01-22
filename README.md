@@ -6,7 +6,6 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@poofnew/vibe-check"><img src="https://img.shields.io/npm/v/@poofnew/vibe-check?color=blue" alt="npm version"></a>
-  <a href="https://github.com/poofdotnew/vibe-check/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@poofnew/vibe-check" alt="license"></a>
   <a href="https://www.npmjs.com/package/@poofnew/vibe-check"><img src="https://img.shields.io/npm/dm/@poofnew/vibe-check" alt="downloads"></a>
   <a href="https://github.com/poofdotnew/vibe-check"><img src="https://img.shields.io/github/stars/poofdotnew/vibe-check?style=social" alt="stars"></a>
 </p>
@@ -871,8 +870,12 @@ export type { EvalWorkspace, HarnessOptions };
 export { groupByCategory, loadEvalCase, loadEvalCases };
 
 // Adapters (for multi-language support)
-export { PythonAgentAdapter } from '@poofnew/vibe-check/adapters';
-export type { PythonAdapterOptions, AgentRequest, AgentResponse } from '@poofnew/vibe-check/adapters';
+export { PythonAgentAdapter } from "@poofnew/vibe-check/adapters";
+export type {
+  AgentRequest,
+  AgentResponse,
+  PythonAdapterOptions,
+} from "@poofnew/vibe-check/adapters";
 ```
 
 ## Examples
@@ -918,43 +921,44 @@ bun run vibe-check run
 
 **Use case**: Python-based Claude agents, multi-language support
 
-The Python adapter uses a JSON protocol over stdin/stdout to communicate with Python agent scripts:
+The Python adapter uses a JSON protocol over stdin/stdout to communicate with
+Python agent scripts:
 
 ```typescript
-import { PythonAgentAdapter } from '@poofnew/vibe-check/adapters';
+import { PythonAgentAdapter } from "@poofnew/vibe-check/adapters";
 
 const adapter = new PythonAgentAdapter({
-  scriptPath: './agent.py',
-  pythonPath: './.venv/bin/python',
+  scriptPath: "./agent.py",
+  pythonPath: "./.venv/bin/python",
   env: { ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY },
 });
 
 export default defineConfig({
   agent: adapter.createAgent(),
-  agentType: 'claude-code',
+  agentType: "claude-code",
 });
 ```
 
 #### Eval Examples by Category and Judge
 
-| Eval File | Category | Judges Used |
-|-----------|----------|-------------|
-| basic.eval.json | basic | llm-code-quality |
-| code-gen.eval.json | code-gen | file-existence, pattern-match, syntax-validation |
-| tool-usage.eval.json | tool | tool-invocation |
-| multi-turn.eval.json | multi-turn | - |
-| route-to-coding.eval.json | routing | agent-routing |
-| route-to-research.eval.json | routing | agent-routing |
-| route-to-reviewer.eval.json | routing | agent-routing |
-| route-intent-classification.eval.json | tool | tool-invocation |
-| tool-chain-explore-modify.eval.json | tool | tool-invocation |
-| tool-chain-search-replace.eval.json | tool | tool-invocation |
-| tool-chain-bash.eval.json | tool | tool-invocation |
-| tool-chain-analysis.eval.json | tool | tool-invocation |
-| multi-file-feature.eval.json | code-gen | file-existence, pattern-match, syntax-validation |
-| skill-invocation.eval.json | tool | tool-invocation, skill-invocation |
-| code-review.eval.json | basic | llm-code-quality |
-| debug-workflow.eval.json | code-gen | file-existence, pattern-match, syntax-validation |
+| Eval File                             | Category   | Judges Used                                      |
+| ------------------------------------- | ---------- | ------------------------------------------------ |
+| basic.eval.json                       | basic      | llm-code-quality                                 |
+| code-gen.eval.json                    | code-gen   | file-existence, pattern-match, syntax-validation |
+| tool-usage.eval.json                  | tool       | tool-invocation                                  |
+| multi-turn.eval.json                  | multi-turn | -                                                |
+| route-to-coding.eval.json             | routing    | agent-routing                                    |
+| route-to-research.eval.json           | routing    | agent-routing                                    |
+| route-to-reviewer.eval.json           | routing    | agent-routing                                    |
+| route-intent-classification.eval.json | tool       | tool-invocation                                  |
+| tool-chain-explore-modify.eval.json   | tool       | tool-invocation                                  |
+| tool-chain-search-replace.eval.json   | tool       | tool-invocation                                  |
+| tool-chain-bash.eval.json             | tool       | tool-invocation                                  |
+| tool-chain-analysis.eval.json         | tool       | tool-invocation                                  |
+| multi-file-feature.eval.json          | code-gen   | file-existence, pattern-match, syntax-validation |
+| skill-invocation.eval.json            | tool       | tool-invocation, skill-invocation                |
+| code-review.eval.json                 | basic      | llm-code-quality                                 |
+| debug-workflow.eval.json              | code-gen   | file-existence, pattern-match, syntax-validation |
 
 ### 🎨 [Custom Judges](./examples/custom-judges)
 
@@ -992,10 +996,13 @@ bun run vibe-check learn stats   # Shows learning system status
 bun run vibe-check learn analyze # Analyzes failures (requires ANTHROPIC_API_KEY)
 ```
 
-**Use case**: Understanding the learning system, testing failure analysis pipeline
+**Use case**: Understanding the learning system, testing failure analysis
+pipeline
 
 The example includes:
-- A mock agent with predictable flaws (uses Read instead of Write, refuses delete operations, etc.)
+
+- A mock agent with predictable flaws (uses Read instead of Write, refuses
+  delete operations, etc.)
 - Pre-configured eval cases designed to fail
 - Pre-generated results so learning commands work immediately
 
@@ -1249,8 +1256,9 @@ is recommended for best performance.
 **Q: Can I use Python agents with vibe-check?**
 
 A: Yes! Use the `PythonAgentAdapter` from `@poofnew/vibe-check/adapters`. It
-spawns Python scripts as subprocesses and communicates via JSON over stdin/stdout.
-See the [Python Agent SDK Integration](./examples/python-agent) example.
+spawns Python scripts as subprocesses and communicates via JSON over
+stdin/stdout. See the [Python Agent SDK Integration](./examples/python-agent)
+example.
 
 ### Configuration
 
