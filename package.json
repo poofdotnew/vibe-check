@@ -68,6 +68,9 @@
     "type": "git",
     "url": "https://github.com/poofdotnew/vibe-check"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
