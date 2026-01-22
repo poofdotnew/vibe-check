@@ -1,0 +1,9 @@
+{
+  "id": "read-file",
+  "name": "Read File Tool",
+  "description": "Verify read_file tool is invoked",
+  "category": "tool",
+  "prompt": "Read the contents of package.json",
+  "expectedToolCalls": [{ "toolName": "read_file", "minCalls": 1 }],
+  "judges": ["tool-invocation"]
+}

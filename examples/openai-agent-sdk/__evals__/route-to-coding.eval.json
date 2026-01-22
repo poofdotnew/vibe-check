@@ -1,0 +1,9 @@
+{
+  "id": "route-to-coding",
+  "name": "Route to Coding",
+  "description": "Verify coding tasks route to coding agent",
+  "category": "routing",
+  "prompt": "Write a function that calculates fibonacci numbers and save it to fib.ts",
+  "expectedAgent": "coding",
+  "judges": ["agent-routing"]
+}

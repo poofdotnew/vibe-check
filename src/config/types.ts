@@ -69,12 +69,9 @@ export interface AgentResult {
   };
 }
 
-export type AgentFunction = (
-  prompt: string,
-  context: AgentContext
-) => Promise<AgentResult>;
+export type AgentFunction = (prompt: string, context: AgentContext) => Promise<AgentResult>;
 
-export type AgentType = 'claude-code' | 'generic';
+export type AgentType = 'claude-code' | 'openai-agents' | 'generic';
 
 export interface LearningConfig {
   enabled?: boolean;
@@ -115,7 +112,19 @@ export interface VibeCheckConfig {
   afterEach?: (result: EvalCaseResult) => Promise<void>;
 }
 
-export interface ResolvedConfig extends Required<Omit<VibeCheckConfig, 'setup' | 'teardown' | 'beforeEach' | 'afterEach' | 'learning' | 'judges' | 'createWorkspace' | 'cleanupWorkspace'>> {
+export interface ResolvedConfig extends Required<
+  Omit<
+    VibeCheckConfig,
+    | 'setup'
+    | 'teardown'
+    | 'beforeEach'
+    | 'afterEach'
+    | 'learning'
+    | 'judges'
+    | 'createWorkspace'
+    | 'cleanupWorkspace'
+  >
+> {
   setup?: () => Promise<void>;
   teardown?: () => Promise<void>;
   beforeEach?: (evalCase: EvalCase) => Promise<void>;

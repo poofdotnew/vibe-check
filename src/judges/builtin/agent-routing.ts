@@ -30,7 +30,11 @@ export class AgentRoutingJudge extends BaseJudge {
     }
 
     const taskCalls = executionResult.toolCalls.filter(
-      (call) => call.toolName === 'Task' || call.toolName.includes('task')
+      (call) =>
+        call.toolName === 'Task' ||
+        call.toolName === 'Handoff' ||
+        call.toolName.includes('task') ||
+        call.toolName.includes('handoff')
     );
 
     let agentsInvoked = taskCalls
@@ -41,7 +45,8 @@ export class AgentRoutingJudge extends BaseJudge {
       .filter((agent) => agent !== 'unknown');
 
     const jsonlAgents = await this.extractAgentsFromJsonl(workingDirectory);
-    agentsInvoked = [...new Set([...agentsInvoked, ...jsonlAgents])];
+    const openaiAgents = await this.extractAgentsFromOpenAITraces(workingDirectory);
+    agentsInvoked = [...new Set([...agentsInvoked, ...jsonlAgents, ...openaiAgents])];
 
     const expectedAgent = evalCase.expectedAgent;
     const invokedExpected = agentsInvoked.includes(expectedAgent);
@@ -51,7 +56,11 @@ export class AgentRoutingJudge extends BaseJudge {
 
     const output = executionResult.output || '';
     const outputLower = output.toLowerCase();
-    const hasDelegationIntent = this.checkDelegationIntent(outputLower, expectedAgent, forbiddenAgents);
+    const hasDelegationIntent = this.checkDelegationIntent(
+      outputLower,
+      expectedAgent,
+      forbiddenAgents
+    );
 
     let score: number;
     let passed: boolean;
@@ -124,12 +133,12 @@ export class AgentRoutingJudge extends BaseJudge {
         if (!stat.isDirectory()) continue;
 
         const files = await fs.readdir(projectPath);
-        const jsonlFiles = files.filter(f => f.endsWith('.jsonl'));
+        const jsonlFiles = files.filter((f) => f.endsWith('.jsonl'));
 
         for (const jsonlFile of jsonlFiles) {
           const filePath = path.join(projectPath, jsonlFile);
           const content = await fs.readFile(filePath, 'utf-8');
-          const lines = content.split('\n').filter(line => line.trim());
+          const lines = content.split('\n').filter((line) => line.trim());
 
           for (const line of lines) {
             try {
@@ -155,6 +164,40 @@ export class AgentRoutingJudge extends BaseJudge {
       }
     } catch {
       // Ignore errors reading JSONL
+    }
+
+    return agents;
+  }
+
+  private async extractAgentsFromOpenAITraces(workspacePath: string): Promise<string[]> {
+    const agents: string[] = [];
+
+    try {
+      const tracesPath = path.join(workspacePath, '.openai-agents', 'traces.jsonl');
+
+      try {
+        await fs.access(tracesPath);
+      } catch {
+        return agents;
+      }
+
+      const content = await fs.readFile(tracesPath, 'utf-8');
+      const lines = content.split('\n').filter((line) => line.trim());
+
+      for (const line of lines) {
+        try {
+          const entry = JSON.parse(line);
+          if (entry.type === 'span' && entry.span_type === 'handoff' && entry.to_agent) {
+            if (!agents.includes(entry.to_agent)) {
+              agents.push(entry.to_agent);
+            }
+          }
+        } catch {
+          // Skip invalid lines
+        }
+      }
+    } catch {
+      // Ignore errors
     }
 
     return agents;

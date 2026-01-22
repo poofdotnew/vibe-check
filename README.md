@@ -90,8 +90,8 @@ agent evaluation:
   suggests prompt improvements
 - **Production-Ready**: Parallel execution, retries, isolated workspaces, and
   detailed reporting
-- **Framework Agnostic**: Works with Claude SDK (TypeScript & Python), custom
-  agents, or any LLM-powered system
+- **Framework Agnostic**: Works with Claude SDK (TypeScript & Python), OpenAI
+  Agents SDK, custom agents, or any LLM-powered system
 - **Developer-First**: TypeScript-native with full type safety and intuitive
   APIs
 
@@ -127,7 +127,8 @@ agent evaluation:
   syntax validation, skill invocation, and 4 LLM-based judges with rubric
   support
 - **Automatic Tool Extraction**: For `claude-code` agents, tool calls are
-  automatically extracted from JSONL logs
+  automatically extracted from JSONL logs. For `openai-agents`, tool calls and
+  handoffs are extracted via the built-in tracing processor
 - **Extensible Judge System**: Create custom judges for specialized validation
 - **Parallel Execution**: Run evaluations concurrently with configurable
   concurrency
@@ -235,7 +236,7 @@ export default defineConfig({
   },
 
   // Optional settings with defaults shown
-  agentType: "generic", // 'claude-code' | 'generic' - use 'claude-code' for automatic JSONL tool extraction
+  agentType: "generic", // 'claude-code' | 'openai-agents' | 'generic' - use 'claude-code' for JSONL extraction, 'openai-agents' for trace extraction
   testDir: "./__evals__", // Directory containing eval cases
   rubricsDir: "./__evals__/rubrics", // Directory for LLM judge rubrics
   testMatch: ["**/*.eval.json"], // Glob patterns for eval files
@@ -876,6 +877,9 @@ export type {
   AgentResponse,
   PythonAdapterOptions,
 } from "@poofnew/vibe-check/adapters";
+
+// OpenAI Agents SDK support
+export { VibeCheckTracingProcessor } from "@poofnew/vibe-check/openai";
 ```
 
 ## Examples
@@ -906,6 +910,40 @@ bun run vibe-check run
 ```
 
 **Use case**: Production Claude agents, comprehensive testing
+
+### 🔷 [OpenAI Agents SDK Integration](./examples/openai-agent-sdk)
+
+OpenAI Agents SDK integration with automatic tool and handoff tracking:
+
+```bash
+cd examples/openai-agent-sdk
+bun install
+export OPENAI_API_KEY=your_key
+bun run vibe-check run
+```
+
+**Use case**: OpenAI agent workflows, multi-agent handoffs
+
+The OpenAI adapter uses a custom `TracingProcessor` to capture tool calls and
+agent handoffs:
+
+```typescript
+import { defineConfig } from "@poofnew/vibe-check";
+import { VibeCheckTracingProcessor } from "@poofnew/vibe-check/openai";
+import { Agent, run, setTraceProcessors } from "@openai/agents";
+
+export default defineConfig({
+  agentType: "openai-agents", // Enables automatic trace extraction
+  agent: async (prompt, context) => {
+    // Set up tracing to capture tool calls and handoffs
+    const processor = new VibeCheckTracingProcessor(context.workingDirectory);
+    setTraceProcessors([processor]);
+
+    const result = await run(yourAgent, prompt);
+    return { output: result.finalOutput, success: true };
+  },
+});
+```
 
 ### 🐍 [Python Agent SDK Integration](./examples/python-agent)
 
@@ -939,7 +977,7 @@ export default defineConfig({
 });
 ```
 
-#### Eval Examples by Category and Judge
+#### Eval Examples by Category and Judge (Claude Agent SDK)
 
 | Eval File                             | Category   | Judges Used                                      |
 | ------------------------------------- | ---------- | ------------------------------------------------ |
@@ -959,6 +997,18 @@ export default defineConfig({
 | skill-invocation.eval.json            | tool       | tool-invocation, skill-invocation                |
 | code-review.eval.json                 | basic      | llm-code-quality                                 |
 | debug-workflow.eval.json              | code-gen   | file-existence, pattern-match, syntax-validation |
+
+#### Eval Examples (OpenAI Agent SDK)
+
+| Eval File                   | Category | Judges Used                                      |
+| --------------------------- | -------- | ------------------------------------------------ |
+| basic.eval.json             | basic    | -                                                |
+| tool-usage.eval.json        | tool     | tool-invocation                                  |
+| write-file.eval.json        | tool     | tool-invocation                                  |
+| code-gen.eval.json          | code-gen | file-existence, pattern-match, syntax-validation |
+| llm-evaluated.eval.json     | basic    | llm-code-quality                                 |
+| route-to-coding.eval.json   | routing  | agent-routing                                    |
+| route-to-research.eval.json | routing  | agent-routing                                    |
 
 ### 🎨 [Custom Judges](./examples/custom-judges)
 
@@ -1240,8 +1290,9 @@ vibe-check run --config config-with-preserve-workspaces.ts
 **Q: What agent frameworks does vibe-check support?**
 
 A: Any agent that can be wrapped in an `async (prompt, context) => AgentResult`
-function. Built-in support for Claude SDK (TypeScript and Python via adapters),
-but works with LangChain, custom agents, or any LLM framework.
+function. Built-in support for Claude SDK (TypeScript and Python via adapters)
+and OpenAI Agents SDK (with automatic tool/handoff tracking), but works with
+LangChain, custom agents, or any LLM framework.
 
 **Q: Can I use this with other LLMs (OpenAI, Gemini, etc.)?**
 

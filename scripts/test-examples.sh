@@ -49,6 +49,17 @@ for example in "$EXAMPLES_DIR"/*/; do
     fi
   fi
 
+  if [ "$example_name" = "openai-agent-sdk" ]; then
+    if [ -z "$OPENAI_API_KEY" ]; then
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo "Skipping: $example_name (no OPENAI_API_KEY)"
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo ""
+      ((SKIPPED++))
+      continue
+    fi
+  fi
+
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "Testing: $example_name"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

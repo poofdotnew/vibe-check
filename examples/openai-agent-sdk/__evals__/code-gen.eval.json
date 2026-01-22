@@ -1,0 +1,21 @@
+{
+  "id": "create-typescript-file",
+  "name": "Create TypeScript File",
+  "description": "Verify agent can create TypeScript files with syntax validation",
+  "category": "code-gen",
+  "prompt": "Create a new file called greeting.ts in the current directory. The file should export a function called greet that takes a name parameter (string) and returns 'Hello, {name}!'",
+  "targetFiles": ["greeting.ts"],
+  "expectedPatterns": [
+    {
+      "file": "greeting.ts",
+      "patterns": ["export", "greet", "string"]
+    }
+  ],
+  "syntaxValidation": true,
+  "referenceSolution": {
+    "description": "A TypeScript greeting function with proper exports and types",
+    "code": "export function greet(name: string): string {\n  return `Hello, ${name}!`;\n}"
+  },
+  "judges": ["file-existence", "pattern-match", "syntax-validation"],
+  "tags": ["code-gen", "typescript"]
+}

@@ -8,6 +8,7 @@ export default defineConfig({
     'judges/index': 'src/judges/index.ts',
     'learning/index': 'src/learning/index.ts',
     'adapters/index': 'src/adapters/index.ts',
+    'openai/index': 'src/openai/index.ts',
   },
   format: ['esm'],
   dts: {
@@ -15,11 +16,12 @@ export default defineConfig({
       index: 'src/index.ts',
       'judges/index': 'src/judges/index.ts',
       'adapters/index': 'src/adapters/index.ts',
+      'openai/index': 'src/openai/index.ts',
     },
   },
   sourcemap: true,
   clean: true,
   splitting: false,
   treeshake: true,
-  external: ['@anthropic-ai/sdk', '@anthropic-ai/claude-agent-sdk'],
+  external: ['@anthropic-ai/sdk', '@anthropic-ai/claude-agent-sdk', '@openai/agents'],
 });

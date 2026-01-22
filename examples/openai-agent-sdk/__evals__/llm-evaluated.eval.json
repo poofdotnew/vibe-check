@@ -1,0 +1,14 @@
+{
+  "id": "llm-evaluated-response",
+  "name": "LLM Evaluated Response",
+  "description": "Verify LLM judge can evaluate response quality",
+  "category": "basic",
+  "prompt": "Write a simple TypeScript function that adds two numbers and returns the result. Include type annotations. Just output the code, no explanation.",
+  "expectedBehavior": "Should return valid TypeScript code with proper type annotations for an add function",
+  "referenceSolution": {
+    "description": "A properly typed TypeScript add function",
+    "code": "function add(a: number, b: number): number {\n  return a + b;\n}"
+  },
+  "judges": ["llm-code-quality"],
+  "tags": ["basic", "llm-judge"]
+}

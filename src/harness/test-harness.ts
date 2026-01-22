@@ -78,6 +78,26 @@ export class TestHarness {
         }
       }
 
+      // Extract tool calls from traces for openai-agents type
+      if (this.config.agentType === 'openai-agents') {
+        const traceToolCalls = await this.extractToolCallsFromOpenAITraces(workspace.path);
+        if (traceToolCalls.length > 0) {
+          this.verbose(`[${evalCase.id}] Found ${traceToolCalls.length} tool calls from traces`);
+          result.toolCalls = result.toolCalls || [];
+          for (const call of traceToolCalls) {
+            if (
+              !result.toolCalls.some(
+                (t) =>
+                  t.toolName === call.toolName &&
+                  JSON.stringify(t.input) === JSON.stringify(call.input)
+              )
+            ) {
+              result.toolCalls.push(call);
+            }
+          }
+        }
+      }
+
       const executionResult = agentResultToExecutionResult(result);
       executionResult.duration = result.duration ?? Date.now() - startTime;
       executionResult.workingDirectory = workspace.path;
@@ -91,10 +111,12 @@ export class TestHarness {
 
       return executionResult;
     } catch (error) {
-      // Still try to extract tool calls from JSONL even on error/timeout
-      let jsonlToolCalls: ToolCall[] = [];
+      // Still try to extract tool calls even on error/timeout
+      let extractedToolCalls: ToolCall[] = [];
       if (this.config.agentType === 'claude-code') {
-        jsonlToolCalls = await this.extractToolCallsFromJsonl(workspace.path);
+        extractedToolCalls = await this.extractToolCallsFromJsonl(workspace.path);
+      } else if (this.config.agentType === 'openai-agents') {
+        extractedToolCalls = await this.extractToolCallsFromOpenAITraces(workspace.path);
       }
 
       // On error, cleanup immediately
@@ -104,7 +126,7 @@ export class TestHarness {
 
       // Re-throw with tool calls available for error analysis
       const executionError = error as Error & { toolCalls?: ToolCall[] };
-      executionError.toolCalls = jsonlToolCalls;
+      executionError.toolCalls = extractedToolCalls;
       throw executionError;
     }
     // Note: Workspace cleanup is deferred until after judging completes
@@ -164,6 +186,26 @@ export class TestHarness {
           }
         }
 
+        // Extract tool calls from traces for openai-agents type
+        if (this.config.agentType === 'openai-agents') {
+          const traceToolCalls = await this.extractToolCallsFromOpenAITraces(workspace.path);
+          if (traceToolCalls.length > 0) {
+            this.verbose(`[${evalCase.id}] Found ${traceToolCalls.length} tool calls from traces`);
+            result.toolCalls = result.toolCalls || [];
+            for (const call of traceToolCalls) {
+              if (
+                !result.toolCalls.some(
+                  (t) =>
+                    t.toolName === call.toolName &&
+                    JSON.stringify(t.input) === JSON.stringify(call.input)
+                )
+              ) {
+                result.toolCalls.push(call);
+              }
+            }
+          }
+        }
+
         const executionResult = agentResultToExecutionResult(result);
         executionResult.duration = result.duration ?? Date.now() - startTime;
         executionResult.workingDirectory = workspace.path;
@@ -186,10 +228,12 @@ export class TestHarness {
 
       return results;
     } catch (error) {
-      // Still try to extract tool calls from JSONL even on error/timeout
-      let jsonlToolCalls: ToolCall[] = [];
+      // Still try to extract tool calls even on error/timeout
+      let extractedToolCalls: ToolCall[] = [];
       if (this.config.agentType === 'claude-code') {
-        jsonlToolCalls = await this.extractToolCallsFromJsonl(workspace.path);
+        extractedToolCalls = await this.extractToolCallsFromJsonl(workspace.path);
+      } else if (this.config.agentType === 'openai-agents') {
+        extractedToolCalls = await this.extractToolCallsFromOpenAITraces(workspace.path);
       }
 
       // On error, cleanup immediately
@@ -199,7 +243,7 @@ export class TestHarness {
 
       // Re-throw with tool calls available for error analysis
       const executionError = error as Error & { toolCalls?: ToolCall[] };
-      executionError.toolCalls = jsonlToolCalls;
+      executionError.toolCalls = extractedToolCalls;
       throw executionError;
     }
     // Note: Workspace cleanup is deferred until after judging completes
@@ -395,6 +439,74 @@ export class TestHarness {
               });
             }
           }
+        }
+      }
+    } catch {
+      // Ignore errors
+    }
+
+    return toolCalls;
+  }
+
+  private async extractToolCallsFromOpenAITraces(workspacePath: string): Promise<ToolCall[]> {
+    const toolCalls: ToolCall[] = [];
+
+    try {
+      const tracesPath = path.join(workspacePath, '.openai-agents', 'traces.jsonl');
+      try {
+        await fs.access(tracesPath);
+      } catch {
+        return toolCalls;
+      }
+
+      const content = await fs.readFile(tracesPath, 'utf-8');
+      const lines = content.split('\n').filter((line) => line.trim());
+
+      for (const line of lines) {
+        try {
+          const entry = JSON.parse(line);
+
+          // Extract function/tool calls
+          if (entry.type === 'span' && entry.span_type === 'function') {
+            let input: unknown;
+            try {
+              input =
+                typeof entry.tool_input === 'string'
+                  ? JSON.parse(entry.tool_input)
+                  : entry.tool_input;
+            } catch {
+              input = entry.tool_input;
+            }
+
+            let output: unknown;
+            try {
+              output =
+                typeof entry.tool_output === 'string'
+                  ? JSON.parse(entry.tool_output)
+                  : entry.tool_output;
+            } catch {
+              output = entry.tool_output;
+            }
+
+            toolCalls.push({
+              toolName: entry.tool_name,
+              input,
+              output,
+            });
+          }
+
+          // Extract handoffs as special tool calls
+          if (entry.type === 'span' && entry.span_type === 'handoff') {
+            toolCalls.push({
+              toolName: 'Handoff',
+              input: {
+                agent: entry.to_agent,
+                fromAgent: entry.from_agent,
+              },
+            });
+          }
+        } catch {
+          // Skip invalid lines
         }
       }
     } catch {

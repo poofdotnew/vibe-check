@@ -1,0 +1,11 @@
+{
+  "name": "vibe-check-openai-agent-sdk-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "vibe-check": "vibe-check"
+  },
+  "dependencies": {
+    "@openai/agents": "^0.4.0"
+  }
+}
