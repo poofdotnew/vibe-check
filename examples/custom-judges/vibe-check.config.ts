@@ -6,7 +6,7 @@ import {
   type JudgeResult,
   type JudgeType,
   type AgentResult,
-} from '@pooflabs/vibe-check';
+} from '@poofnew/vibe-check';
 
 class ResponseLengthJudge extends BaseJudge {
   id = 'response-length';

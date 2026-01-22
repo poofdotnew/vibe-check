@@ -8,7 +8,5 @@
     "learn:stats": "vibe-check learn stats",
     "learn:analyze": "vibe-check learn analyze"
   },
-  "dependencies": {
-    "@pooflabs/vibe-check": "file:../.."
-  }
+  "dependencies": {}
 }

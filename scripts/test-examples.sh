@@ -63,6 +63,7 @@ for example in "$EXAMPLES_DIR"/*/; do
   # Install dependencies (skip if node_modules exists and not --clean)
   if [ "$CLEAN_INSTALL" = true ] || [ ! -d "node_modules" ]; then
     echo "Installing dependencies..."
+    # Install other dependencies first
     if ! bun install 2>&1; then
       echo "✗ $example_name failed (install error)"
       ((FAILED++))
@@ -70,6 +71,10 @@ for example in "$EXAMPLES_DIR"/*/; do
       echo ""
       continue
     fi
+    # Create symlink to root package
+    mkdir -p node_modules/@poofnew
+    rm -rf node_modules/@poofnew/vibe-check
+    ln -s "$ROOT_DIR" node_modules/@poofnew/vibe-check
   fi
 
   # Setup Python virtual environment for python-agent example

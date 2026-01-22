@@ -1,4 +1,4 @@
-import { defineConfig, type AgentResult, type AgentContext } from '@pooflabs/vibe-check';
+import { defineConfig, type AgentResult, type AgentContext } from '@poofnew/vibe-check';
 import { config } from 'dotenv';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';

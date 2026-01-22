@@ -1,4 +1,4 @@
-import { defineConfig, type AgentResult } from '@pooflabs/vibe-check';
+import { defineConfig, type AgentResult } from '@poofnew/vibe-check';
 
 export default defineConfig({
   testDir: './__evals__',

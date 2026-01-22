@@ -1,5 +1,5 @@
 {
-  "name": "@pooflabs/vibe-check",
+  "name": "@poofnew/vibe-check",
   "version": "0.1.0",
   "description": "AI agent evaluation framework for Claude and beyond",
   "type": "module",
@@ -50,7 +50,8 @@
     "version": "changeset version",
     "release": "bun run build && changeset publish",
     "prepublishOnly": "bun run build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "clean": "rm -rf dist && rm -rf node_modules && for d in examples/*; do rm -rf \"$d/node_modules\" \"$d/__evals__/results\"; done"
   },
   "keywords": [
     "ai",
@@ -65,13 +66,14 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pooflabs/vibe-check"
+    "url": "https://github.com/poofdotnew/vibe-check"
   },
   "dependencies": {
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "dotenv": "^17.2.3",
     "glob": "^11.0.0",
+    "tsx": "^4.19.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

@@ -2,13 +2,13 @@
   <img src="logo.png" alt="vibe-check logo" width="400">
 </p>
 
-<h1 align="center">@pooflabs/vibe-check</h1>
+<h1 align="center">@poofnew/vibe-check</h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@pooflabs/vibe-check"><img src="https://img.shields.io/npm/v/@pooflabs/vibe-check?color=blue" alt="npm version"></a>
-  <a href="https://github.com/pooflabs/vibe-check/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@pooflabs/vibe-check" alt="license"></a>
-  <a href="https://www.npmjs.com/package/@pooflabs/vibe-check"><img src="https://img.shields.io/npm/dm/@pooflabs/vibe-check" alt="downloads"></a>
-  <a href="https://github.com/pooflabs/vibe-check"><img src="https://img.shields.io/github/stars/pooflabs/vibe-check?style=social" alt="stars"></a>
+  <a href="https://www.npmjs.com/package/@poofnew/vibe-check"><img src="https://img.shields.io/npm/v/@poofnew/vibe-check?color=blue" alt="npm version"></a>
+  <a href="https://github.com/poofdotnew/vibe-check/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@poofnew/vibe-check" alt="license"></a>
+  <a href="https://www.npmjs.com/package/@poofnew/vibe-check"><img src="https://img.shields.io/npm/dm/@poofnew/vibe-check" alt="downloads"></a>
+  <a href="https://github.com/poofdotnew/vibe-check"><img src="https://img.shields.io/github/stars/poofdotnew/vibe-check?style=social" alt="stars"></a>
 </p>
 
 <p align="center">
@@ -145,13 +145,13 @@ agent evaluation:
 
 ```bash
 # Using bun (recommended)
-bun add @pooflabs/vibe-check
+bun add @poofnew/vibe-check
 
 # Using npm
-npm install @pooflabs/vibe-check
+npm install @poofnew/vibe-check
 
 # Using pnpm
-pnpm add @pooflabs/vibe-check
+pnpm add @poofnew/vibe-check
 ```
 
 ## Quick Start
@@ -172,7 +172,7 @@ This creates:
 Edit `vibe-check.config.ts` to implement your agent function:
 
 ```typescript
-import { defineConfig } from "@pooflabs/vibe-check";
+import { defineConfig } from "@poofnew/vibe-check";
 
 export default defineConfig({
   testDir: "./__evals__",
@@ -227,7 +227,7 @@ bunx vibe-check run
 Create `vibe-check.config.ts` in your project root:
 
 ```typescript
-import { defineConfig } from "@pooflabs/vibe-check";
+import { defineConfig } from "@poofnew/vibe-check";
 
 export default defineConfig({
   // Required: Your agent function
@@ -539,7 +539,7 @@ import {
   type JudgeContext,
   type JudgeResult,
   type JudgeType,
-} from "@pooflabs/vibe-check";
+} from "@poofnew/vibe-check";
 
 class ResponseLengthJudge extends BaseJudge {
   id = "response-length";
@@ -804,7 +804,7 @@ import {
   EvalRunner,
   loadConfig,
   loadEvalCases,
-} from "@pooflabs/vibe-check";
+} from "@poofnew/vibe-check";
 
 // Load and run
 const config = await loadConfig("./vibe-check.config.ts");
@@ -871,8 +871,8 @@ export type { EvalWorkspace, HarnessOptions };
 export { groupByCategory, loadEvalCase, loadEvalCases };
 
 // Adapters (for multi-language support)
-export { PythonAgentAdapter } from '@pooflabs/vibe-check/adapters';
-export type { PythonAdapterOptions, AgentRequest, AgentResponse } from '@pooflabs/vibe-check/adapters';
+export { PythonAgentAdapter } from '@poofnew/vibe-check/adapters';
+export type { PythonAdapterOptions, AgentRequest, AgentResponse } from '@poofnew/vibe-check/adapters';
 ```
 
 ## Examples
@@ -921,7 +921,7 @@ bun run vibe-check run
 The Python adapter uses a JSON protocol over stdin/stdout to communicate with Python agent scripts:
 
 ```typescript
-import { PythonAgentAdapter } from '@pooflabs/vibe-check/adapters';
+import { PythonAgentAdapter } from '@poofnew/vibe-check/adapters';
 
 const adapter = new PythonAgentAdapter({
   scriptPath: './agent.py',
@@ -1098,7 +1098,7 @@ For full control over workspace lifecycle, use `createWorkspace` and
 `cleanupWorkspace` hooks:
 
 ```typescript
-import { defineConfig, type EvalWorkspace } from "@pooflabs/vibe-check";
+import { defineConfig, type EvalWorkspace } from "@poofnew/vibe-check";
 import * as fs from "fs/promises";
 import * as path from "path";
 import { execFile } from "child_process";
@@ -1222,7 +1222,7 @@ vibe-check run --config config-with-preserve-workspaces.ts
 ### Getting Help
 
 - Check [examples](./examples) for working configurations
-- Search [GitHub Issues](https://github.com/pooflabs/vibe-check/issues)
+- Search [GitHub Issues](https://github.com/poofdotnew/vibe-check/issues)
 - Join our [Discord](https://t.co/tu734iDt9Q)
 - Post on [X](https://x.com/poofnew)
 
@@ -1248,7 +1248,7 @@ is recommended for best performance.
 
 **Q: Can I use Python agents with vibe-check?**
 
-A: Yes! Use the `PythonAgentAdapter` from `@pooflabs/vibe-check/adapters`. It
+A: Yes! Use the `PythonAgentAdapter` from `@poofnew/vibe-check/adapters`. It
 spawns Python scripts as subprocesses and communicates via JSON over stdin/stdout.
 See the [Python Agent SDK Integration](./examples/python-agent) example.
 
@@ -1356,7 +1356,7 @@ A: LLMs are non-deterministic. Use trials with pass thresholds:
 
 ```bash
 # Clone the repository
-git clone https://github.com/pooflabs/vibe-check.git
+git clone https://github.com/poofdotnew/vibe-check.git
 cd vibe-check
 
 # Install dependencies

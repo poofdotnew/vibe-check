@@ -1,5 +1,5 @@
-import { defineConfig } from '@pooflabs/vibe-check';
-import { PythonAgentAdapter } from '@pooflabs/vibe-check/adapters';
+import { defineConfig } from '@poofnew/vibe-check';
+import { PythonAgentAdapter } from '@poofnew/vibe-check/adapters';
 import { config } from 'dotenv';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';

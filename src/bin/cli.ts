@@ -95,7 +95,7 @@ program
     const fs = await import('fs/promises');
     const path = await import('path');
 
-    const configContent = `import { defineConfig } from '@pooflabs/vibe-check';
+    const configContent = `import { defineConfig } from '@poofnew/vibe-check';
 
 // TODO: Import your AI agent SDK
 // import { query } from '@anthropic-ai/claude-agent-sdk';
