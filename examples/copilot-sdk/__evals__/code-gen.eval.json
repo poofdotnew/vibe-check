@@ -1,0 +1,17 @@
+{
+  "id": "code-gen",
+  "name": "Code Generation",
+  "description": "Test code generation capability",
+  "category": "code-gen",
+  "prompt": "Use the write_file tool to create a file called hello.js with a function that returns 'Hello World'",
+  "timeout": 120000,
+  "targetFiles": ["hello.js"],
+  "expectedPatterns": [
+    {
+      "file": "hello.js",
+      "patterns": ["function", "Hello World"]
+    }
+  ],
+  "judges": ["file-existence", "pattern-match"],
+  "tags": ["code-gen", "javascript"]
+}

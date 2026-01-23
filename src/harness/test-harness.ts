@@ -118,6 +118,28 @@ export class TestHarness {
         }
       }
 
+      // Extract tool calls from events for copilot type
+      if (this.config.agentType === 'copilot') {
+        const copilotToolCalls = await this.extractToolCallsFromCopilotEvents(workspace.path);
+        if (copilotToolCalls.length > 0) {
+          this.verbose(
+            `[${evalCase.id}] Found ${copilotToolCalls.length} tool calls from Copilot events`
+          );
+          result.toolCalls = result.toolCalls || [];
+          for (const call of copilotToolCalls) {
+            if (
+              !result.toolCalls.some(
+                (t) =>
+                  t.toolName === call.toolName &&
+                  JSON.stringify(t.input) === JSON.stringify(call.input)
+              )
+            ) {
+              result.toolCalls.push(call);
+            }
+          }
+        }
+      }
+
       const executionResult = agentResultToExecutionResult(result);
       executionResult.duration = result.duration ?? Date.now() - startTime;
       executionResult.workingDirectory = workspace.path;
@@ -139,6 +161,8 @@ export class TestHarness {
         extractedToolCalls = await this.extractToolCallsFromOpenAITraces(workspace.path);
       } else if (this.config.agentType === 'vercel-ai') {
         extractedToolCalls = await this.extractToolCallsFromVercelAISteps(workspace.path);
+      } else if (this.config.agentType === 'copilot') {
+        extractedToolCalls = await this.extractToolCallsFromCopilotEvents(workspace.path);
       }
 
       // On error, cleanup immediately
@@ -248,6 +272,28 @@ export class TestHarness {
           }
         }
 
+        // Extract tool calls from events for copilot type
+        if (this.config.agentType === 'copilot') {
+          const copilotToolCalls = await this.extractToolCallsFromCopilotEvents(workspace.path);
+          if (copilotToolCalls.length > 0) {
+            this.verbose(
+              `[${evalCase.id}] Found ${copilotToolCalls.length} tool calls from Copilot events`
+            );
+            result.toolCalls = result.toolCalls || [];
+            for (const call of copilotToolCalls) {
+              if (
+                !result.toolCalls.some(
+                  (t) =>
+                    t.toolName === call.toolName &&
+                    JSON.stringify(t.input) === JSON.stringify(call.input)
+                )
+              ) {
+                result.toolCalls.push(call);
+              }
+            }
+          }
+        }
+
         const executionResult = agentResultToExecutionResult(result);
         executionResult.duration = result.duration ?? Date.now() - startTime;
         executionResult.workingDirectory = workspace.path;
@@ -278,6 +324,8 @@ export class TestHarness {
         extractedToolCalls = await this.extractToolCallsFromOpenAITraces(workspace.path);
       } else if (this.config.agentType === 'vercel-ai') {
         extractedToolCalls = await this.extractToolCallsFromVercelAISteps(workspace.path);
+      } else if (this.config.agentType === 'copilot') {
+        extractedToolCalls = await this.extractToolCallsFromCopilotEvents(workspace.path);
       }
 
       // On error, cleanup immediately
@@ -610,6 +658,84 @@ export class TestHarness {
             if (existingCall && output) {
               existingCall.output = output;
             } else if (!existingCall) {
+              toolCalls.push({
+                toolName: entry.tool_name,
+                input,
+                output,
+              });
+            }
+          }
+
+          // Extract handoffs as special tool calls
+          if (entry.type === 'handoff' && entry.to_agent) {
+            toolCalls.push({
+              toolName: 'Handoff',
+              input: {
+                agent: entry.to_agent,
+                fromAgent: entry.from_agent,
+              },
+            });
+          }
+        } catch {
+          // Skip invalid lines
+        }
+      }
+    } catch {
+      // Ignore errors
+    }
+
+    return toolCalls;
+  }
+
+  private async extractToolCallsFromCopilotEvents(workspacePath: string): Promise<ToolCall[]> {
+    const toolCalls: ToolCall[] = [];
+
+    try {
+      const eventsPath = path.join(workspacePath, '.copilot', 'events.jsonl');
+      try {
+        await fs.access(eventsPath);
+      } catch {
+        return toolCalls;
+      }
+
+      const content = await fs.readFile(eventsPath, 'utf-8');
+      const lines = content.split('\n').filter((line) => line.trim());
+
+      for (const line of lines) {
+        try {
+          const entry = JSON.parse(line);
+
+          // Extract tool calls (tool_end has the complete info)
+          if (entry.type === 'tool_end' && entry.tool_name) {
+            let input: unknown;
+            try {
+              input =
+                typeof entry.tool_input === 'string'
+                  ? JSON.parse(entry.tool_input)
+                  : entry.tool_input;
+            } catch {
+              input = entry.tool_input;
+            }
+
+            let output: unknown;
+            if (entry.tool_output) {
+              try {
+                output =
+                  typeof entry.tool_output === 'string'
+                    ? JSON.parse(entry.tool_output)
+                    : entry.tool_output;
+              } catch {
+                output = entry.tool_output;
+              }
+            }
+
+            const existingCall = toolCalls.find(
+              (tc) =>
+                tc.toolName === entry.tool_name &&
+                JSON.stringify(tc.input) === JSON.stringify(input)
+            );
+
+            if (!existingCall) {
               toolCalls.push({
                 toolName: entry.tool_name,
                 input,

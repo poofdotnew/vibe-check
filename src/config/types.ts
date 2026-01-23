@@ -71,7 +71,7 @@ export interface AgentResult {
 
 export type AgentFunction = (prompt: string, context: AgentContext) => Promise<AgentResult>;
 
-export type AgentType = 'claude-code' | 'openai-agents' | 'vercel-ai' | 'generic';
+export type AgentType = 'claude-code' | 'openai-agents' | 'vercel-ai' | 'copilot' | 'generic';
 
 export interface LearningConfig {
   enabled?: boolean;

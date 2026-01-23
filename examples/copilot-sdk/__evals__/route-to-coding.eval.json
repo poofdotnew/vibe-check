@@ -1,0 +1,11 @@
+{
+  "id": "route-to-coding",
+  "name": "Route to Coding Agent",
+  "description": "Verify coding tasks route to the coding agent via handoff",
+  "category": "routing",
+  "prompt": "Use the write_file tool to create a file called test.txt with the content 'Hello from Copilot'",
+  "expectedAgent": "coding",
+  "timeout": 180000,
+  "judges": ["agent-routing"],
+  "tags": ["routing", "coding", "handoff"]
+}

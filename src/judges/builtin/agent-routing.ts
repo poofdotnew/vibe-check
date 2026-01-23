@@ -47,8 +47,15 @@ export class AgentRoutingJudge extends BaseJudge {
     const jsonlAgents = await this.extractAgentsFromJsonl(workingDirectory);
     const openaiAgents = await this.extractAgentsFromOpenAITraces(workingDirectory);
     const vercelAgents = await this.extractAgentsFromVercelAISteps(workingDirectory);
+    const copilotAgents = await this.extractAgentsFromCopilotEvents(workingDirectory);
     agentsInvoked = [
-      ...new Set([...agentsInvoked, ...jsonlAgents, ...openaiAgents, ...vercelAgents]),
+      ...new Set([
+        ...agentsInvoked,
+        ...jsonlAgents,
+        ...openaiAgents,
+        ...vercelAgents,
+        ...copilotAgents,
+      ]),
     ];
 
     const expectedAgent = evalCase.expectedAgent;
@@ -219,6 +226,40 @@ export class AgentRoutingJudge extends BaseJudge {
       }
 
       const content = await fs.readFile(stepsPath, 'utf-8');
+      const lines = content.split('\n').filter((line) => line.trim());
+
+      for (const line of lines) {
+        try {
+          const entry = JSON.parse(line);
+          if (entry.type === 'handoff' && entry.to_agent) {
+            if (!agents.includes(entry.to_agent)) {
+              agents.push(entry.to_agent);
+            }
+          }
+        } catch {
+          // Skip invalid lines
+        }
+      }
+    } catch {
+      // Ignore errors
+    }
+
+    return agents;
+  }
+
+  private async extractAgentsFromCopilotEvents(workspacePath: string): Promise<string[]> {
+    const agents: string[] = [];
+
+    try {
+      const eventsPath = path.join(workspacePath, '.copilot', 'events.jsonl');
+
+      try {
+        await fs.access(eventsPath);
+      } catch {
+        return agents;
+      }
+
+      const content = await fs.readFile(eventsPath, 'utf-8');
       const lines = content.split('\n').filter((line) => line.trim());
 
       for (const line of lines) {

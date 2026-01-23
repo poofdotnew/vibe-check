@@ -1,0 +1,12 @@
+{
+  "name": "vibe-check-copilot-sdk-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "vibe-check": "vibe-check"
+  },
+  "dependencies": {
+    "@github/copilot-sdk": "^0.1.0",
+    "zod": "^3.24.0"
+  }
+}

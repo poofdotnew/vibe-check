@@ -39,6 +39,11 @@
       "types": "./dist/vercel-ai/index.d.ts",
       "import": "./dist/vercel-ai/index.js",
       "default": "./dist/vercel-ai/index.js"
+    },
+    "./copilot": {
+      "types": "./dist/copilot/index.d.ts",
+      "import": "./dist/copilot/index.js",
+      "default": "./dist/copilot/index.js"
     }
   },
   "files": [
@@ -117,7 +122,8 @@
     "@anthropic-ai/claude-agent-sdk": ">=0.2.0",
     "@babel/parser": "^7.28.6",
     "@openai/agents": ">=0.4.0",
-    "ai": ">=4.0.0"
+    "ai": ">=4.0.0",
+    "@github/copilot-sdk": ">=0.1.0"
   },
   "peerDependenciesMeta": {
     "@anthropic-ai/sdk": {
@@ -133,6 +139,9 @@
       "optional": true
     },
     "ai": {
+      "optional": true
+    },
+    "@github/copilot-sdk": {
       "optional": true
     }
   }

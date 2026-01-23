@@ -1,0 +1,13 @@
+{
+  "id": "llm-evaluated",
+  "name": "LLM Evaluated Response",
+  "description": "Test response quality using LLM judge",
+  "category": "basic",
+  "prompt": "Explain what a JavaScript Promise is in 2-3 sentences",
+  "timeout": 60000,
+  "judges": ["llm"],
+  "expected": {
+    "llmCriteria": "The response should accurately explain that a Promise is a JavaScript object representing the eventual completion or failure of an asynchronous operation. It should mention that Promises have states (pending, fulfilled, rejected) or explain how they handle async code."
+  },
+  "tags": ["llm-judge", "javascript", "concepts"]
+}

@@ -60,6 +60,18 @@ for example in "$EXAMPLES_DIR"/*/; do
     fi
   fi
 
+  # Skip copilot-sdk - requires Copilot CLI to be installed
+  if [ "$example_name" = "copilot-sdk" ]; then
+    if ! command -v copilot &> /dev/null; then
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo "Skipping: $example_name (Copilot CLI not installed)"
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo ""
+      ((SKIPPED++))
+      continue
+    fi
+  fi
+
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "Testing: $example_name"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

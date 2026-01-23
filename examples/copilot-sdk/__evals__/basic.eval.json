@@ -1,0 +1,13 @@
+{
+  "id": "basic",
+  "name": "Basic Response",
+  "description": "Test basic agent response capability",
+  "category": "basic",
+  "prompt": "Say hello and introduce yourself briefly",
+  "timeout": 60000,
+  "judges": ["contains"],
+  "expected": {
+    "contains": ["hello"]
+  },
+  "tags": ["basic", "greeting"]
+}

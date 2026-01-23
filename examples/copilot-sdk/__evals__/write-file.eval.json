@@ -1,0 +1,12 @@
+{
+  "id": "write-file",
+  "name": "Write File Tool",
+  "description": "Test that agent uses the write_file tool to create files",
+  "category": "tool",
+  "prompt": "Use the write_file tool to create a file called output.txt with the content 'Test output'",
+  "timeout": 120000,
+  "expectedToolCalls": [{ "toolName": "write_file", "minCalls": 1 }],
+  "targetFiles": ["output.txt"],
+  "judges": ["tool-invocation", "file-existence"],
+  "tags": ["tool", "write-file"]
+}

@@ -10,6 +10,7 @@ export default defineConfig({
     'adapters/index': 'src/adapters/index.ts',
     'openai/index': 'src/openai/index.ts',
     'vercel-ai/index': 'src/vercel-ai/index.ts',
+    'copilot/index': 'src/copilot/index.ts',
   },
   format: ['esm'],
   dts: {
@@ -19,11 +20,18 @@ export default defineConfig({
       'adapters/index': 'src/adapters/index.ts',
       'openai/index': 'src/openai/index.ts',
       'vercel-ai/index': 'src/vercel-ai/index.ts',
+      'copilot/index': 'src/copilot/index.ts',
     },
   },
   sourcemap: true,
   clean: true,
   splitting: false,
   treeshake: true,
-  external: ['@anthropic-ai/sdk', '@anthropic-ai/claude-agent-sdk', '@openai/agents', 'ai'],
+  external: [
+    '@anthropic-ai/sdk',
+    '@anthropic-ai/claude-agent-sdk',
+    '@openai/agents',
+    'ai',
+    '@github/copilot-sdk',
+  ],
 });
