@@ -93,6 +93,9 @@ export {
 } from './utils/result-aggregator.js';
 export type { AggregatedResult, AggregatedSummary } from './utils/result-aggregator.js';
 
+export { saveRunToHistory, loadHistory, getLastRun, compareRuns } from './utils/history.js';
+export type { HistoryEntry, RunComparison } from './utils/history.js';
+
 // Adapters
 export { PythonAgentAdapter } from './adapters/python-adapter.js';
 export type { PythonAdapterOptions } from './adapters/python-adapter.js';

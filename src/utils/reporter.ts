@@ -1,10 +1,12 @@
 import type { EvalCaseResult, EvalCategory, ErrorType } from '../config/schemas.js';
 import type { EvalSuiteResult } from '../runner/eval-runner.js';
+import { compareRuns } from './history.js';
 
 export interface EvalReportOptions {
   verbose?: boolean;
   showDetails?: boolean;
   format?: 'text' | 'json';
+  previousRun?: EvalSuiteResult | null;
 }
 
 /** @deprecated Use EvalReportOptions instead */
@@ -53,10 +55,10 @@ export function summarizeByCategory(results: EvalCaseResult[]): CategorySummary[
   return Array.from(categoryMap.entries()).map(([category, categoryResults]) => ({
     category,
     total: categoryResults.length,
-    passed: categoryResults.filter(r => r.success).length,
-    failed: categoryResults.filter(r => !r.success && !r.error).length,
-    errors: categoryResults.filter(r => r.error).length,
-    passRate: categoryResults.filter(r => r.success).length / categoryResults.length,
+    passed: categoryResults.filter((r) => r.success).length,
+    failed: categoryResults.filter((r) => !r.success && !r.error).length,
+    errors: categoryResults.filter((r) => r.error).length,
+    passRate: categoryResults.filter((r) => r.success).length / categoryResults.length,
   }));
 }
 
@@ -83,8 +85,24 @@ export function summarizeErrors(results: EvalCaseResult[]): ErrorSummary[] {
   }));
 }
 
+function formatDelta(delta: number, suffix = ''): string {
+  if (delta === 0) return '';
+  const sign = delta > 0 ? '+' : '';
+  return ` (${sign}${delta.toFixed(1)}${suffix})`;
+}
+
+function formatPassRateDelta(delta: number): string {
+  if (delta === 0) return ' (no change)';
+  const sign = delta > 0 ? '+' : '';
+  const percent = (delta * 100).toFixed(1);
+  const arrow = delta > 0 ? '↑' : '↓';
+  return ` ${arrow} ${sign}${percent}% from last run`;
+}
+
 export function printSummary(suiteResult: EvalSuiteResult, options: EvalReportOptions = {}): void {
-  const { verbose = false, showDetails = false } = options;
+  const { verbose = false, previousRun } = options;
+
+  const comparison = previousRun ? compareRuns(suiteResult, previousRun) : null;
 
   console.log('\n' + '='.repeat(60));
   console.log('EVAL RESULTS SUMMARY');
@@ -96,15 +114,41 @@ export function printSummary(suiteResult: EvalSuiteResult, options: EvalReportOp
 
   console.log('\n--- Overall ---');
   console.log(`Total: ${suiteResult.total}`);
-  console.log(`Passed: ${suiteResult.passed} (${formatPassRate(suiteResult.passRate)})`);
+  const passRateDelta = comparison ? formatPassRateDelta(comparison.passRateDelta) : '';
+  console.log(
+    `Passed: ${suiteResult.passed} (${formatPassRate(suiteResult.passRate)})${passRateDelta}`
+  );
   console.log(`Failed: ${suiteResult.failed}`);
   console.log(`Errors: ${suiteResult.errors}`);
+
+  if (comparison) {
+    console.log('\n--- vs Previous Run ---');
+    if (
+      comparison.newlyPassing.length === 0 &&
+      comparison.newlyFailing.length === 0 &&
+      comparison.passRateDelta === 0
+    ) {
+      console.log('No changes from previous run');
+    } else {
+      console.log(
+        `Pass rate: ${formatPassRate(suiteResult.passRate)}${formatDelta(comparison.passRateDelta * 100, '%')}`
+      );
+      if (comparison.newlyPassing.length > 0) {
+        console.log(`Newly passing: ${comparison.newlyPassing.join(', ')}`);
+      }
+      if (comparison.newlyFailing.length > 0) {
+        console.log(`Newly failing: ${comparison.newlyFailing.join(', ')}`);
+      }
+    }
+  }
 
   const categorySummaries = summarizeByCategory(suiteResult.results);
   if (categorySummaries.length > 1) {
     console.log('\n--- By Category ---');
     for (const summary of categorySummaries) {
-      console.log(`  ${summary.category}: ${summary.passed}/${summary.total} (${formatPassRate(summary.passRate)})`);
+      console.log(
+        `  ${summary.category}: ${summary.passed}/${summary.total} (${formatPassRate(summary.passRate)})`
+      );
     }
   }
 
@@ -113,33 +157,33 @@ export function printSummary(suiteResult: EvalSuiteResult, options: EvalReportOp
     console.log('\n--- Errors by Type ---');
     for (const summary of errorSummaries) {
       console.log(`  ${summary.type}: ${summary.count}`);
-      if (verbose) {
-        for (const example of summary.examples) {
-          console.log(`    - ${example}`);
-        }
+      for (const example of summary.examples) {
+        console.log(`    - ${example}`);
       }
     }
   }
 
-  if (showDetails) {
-    console.log('\n--- Individual Results ---');
-    for (const result of suiteResult.results) {
-      const status = getStatusSymbol(result.success);
-      const trialInfo = result.trialResults
-        ? ` [${result.trialResults.filter(t => t).length}/${result.trialResults.length}]`
-        : '';
-      console.log(`${status} ${result.evalCase.name}${trialInfo} (${formatDuration(result.duration)})`);
+  console.log('\n--- Individual Results ---');
+  for (const result of suiteResult.results) {
+    const status = getStatusSymbol(result.success);
+    const trialInfo = result.trialResults
+      ? ` [${result.trialResults.filter((t) => t).length}/${result.trialResults.length}]`
+      : '';
+    console.log(
+      `${status} ${result.evalCase.name}${trialInfo} (${formatDuration(result.duration)})`
+    );
 
-      if (verbose && result.judgeResults.length > 0) {
-        for (const judge of result.judgeResults) {
-          const judgeStatus = getStatusSymbol(judge.passed);
-          console.log(`    ${judgeStatus} ${judge.judgeId}: ${judge.score}/100 - ${judge.reasoning.substring(0, 80)}`);
-        }
+    if (verbose && result.judgeResults.length > 0) {
+      for (const judge of result.judgeResults) {
+        const judgeStatus = getStatusSymbol(judge.passed);
+        console.log(
+          `    ${judgeStatus} ${judge.judgeId}: ${judge.score}/100 - ${judge.reasoning.substring(0, 80)}`
+        );
       }
+    }
 
-      if (result.error) {
-        console.log(`    Error: ${result.error.message.substring(0, 100)}`);
-      }
+    if (result.error) {
+      console.log(`    Error: ${result.error.message.substring(0, 100)}`);
     }
   }
 
@@ -160,7 +204,7 @@ export function generateJsonReport(suiteResult: EvalSuiteResult): object {
     },
     byCategory: summarizeByCategory(suiteResult.results),
     errorsByType: summarizeErrors(suiteResult.results),
-    results: suiteResult.results.map(r => ({
+    results: suiteResult.results.map((r) => ({
       id: r.evalCase.id,
       name: r.evalCase.name,
       category: r.evalCase.category,
@@ -169,7 +213,7 @@ export function generateJsonReport(suiteResult: EvalSuiteResult): object {
       errorType: r.errorType,
       retryCount: r.retryCount,
       trialResults: r.trialResults,
-      judgeResults: r.judgeResults.map(j => ({
+      judgeResults: r.judgeResults.map((j) => ({
         judgeId: j.judgeId,
         passed: j.passed,
         score: j.score,
