@@ -1,0 +1,11 @@
+{
+  "id": "write-file",
+  "name": "Write File Tool",
+  "description": "Verify write tool is invoked to create files",
+  "category": "tool",
+  "prompt": "Create a file called hello.txt with the content 'Hello, World!'",
+  "expectedToolCalls": [{ "toolName": "Write", "minCalls": 1 }],
+  "targetFiles": ["hello.txt"],
+  "judges": ["tool-invocation", "file-existence"],
+  "tags": ["tools", "file-ops"]
+}

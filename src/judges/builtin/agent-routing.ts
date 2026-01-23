@@ -46,7 +46,10 @@ export class AgentRoutingJudge extends BaseJudge {
 
     const jsonlAgents = await this.extractAgentsFromJsonl(workingDirectory);
     const openaiAgents = await this.extractAgentsFromOpenAITraces(workingDirectory);
-    agentsInvoked = [...new Set([...agentsInvoked, ...jsonlAgents, ...openaiAgents])];
+    const vercelAgents = await this.extractAgentsFromVercelAISteps(workingDirectory);
+    agentsInvoked = [
+      ...new Set([...agentsInvoked, ...jsonlAgents, ...openaiAgents, ...vercelAgents]),
+    ];
 
     const expectedAgent = evalCase.expectedAgent;
     const invokedExpected = agentsInvoked.includes(expectedAgent);
@@ -188,6 +191,40 @@ export class AgentRoutingJudge extends BaseJudge {
         try {
           const entry = JSON.parse(line);
           if (entry.type === 'span' && entry.span_type === 'handoff' && entry.to_agent) {
+            if (!agents.includes(entry.to_agent)) {
+              agents.push(entry.to_agent);
+            }
+          }
+        } catch {
+          // Skip invalid lines
+        }
+      }
+    } catch {
+      // Ignore errors
+    }
+
+    return agents;
+  }
+
+  private async extractAgentsFromVercelAISteps(workspacePath: string): Promise<string[]> {
+    const agents: string[] = [];
+
+    try {
+      const stepsPath = path.join(workspacePath, '.vercel-ai', 'steps.jsonl');
+
+      try {
+        await fs.access(stepsPath);
+      } catch {
+        return agents;
+      }
+
+      const content = await fs.readFile(stepsPath, 'utf-8');
+      const lines = content.split('\n').filter((line) => line.trim());
+
+      for (const line of lines) {
+        try {
+          const entry = JSON.parse(line);
+          if (entry.type === 'handoff' && entry.to_agent) {
             if (!agents.includes(entry.to_agent)) {
               agents.push(entry.to_agent);
             }

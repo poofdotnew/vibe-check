@@ -49,7 +49,7 @@ for example in "$EXAMPLES_DIR"/*/; do
     fi
   fi
 
-  if [ "$example_name" = "openai-agent-sdk" ]; then
+  if [ "$example_name" = "openai-agent-sdk" ] || [ "$example_name" = "vercel-ai-sdk" ]; then
     if [ -z "$OPENAI_API_KEY" ]; then
       echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       echo "Skipping: $example_name (no OPENAI_API_KEY)"

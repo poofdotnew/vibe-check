@@ -1,0 +1,11 @@
+{
+  "id": "route-to-research",
+  "name": "Route to Research Agent",
+  "description": "Verify research queries route to the research agent",
+  "category": "routing",
+  "prompt": "Analyze and summarize what the ./package.json file contains",
+  "expectedAgent": "research",
+  "timeout": 180000,
+  "judges": ["agent-routing"],
+  "tags": ["routing", "research"]
+}

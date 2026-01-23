@@ -1,0 +1,11 @@
+{
+  "id": "llm-code-review",
+  "name": "LLM Code Quality Review",
+  "description": "Use LLM judge to evaluate generated code quality",
+  "category": "code-gen",
+  "prompt": "Create a TypeScript file called utils.ts with a function that validates email addresses using a regex pattern. The function should be named isValidEmail, take a string parameter, and return a boolean.",
+  "targetFiles": ["utils.ts"],
+  "judges": ["file-existence", "llm"],
+  "rubric": "code-quality",
+  "tags": ["code-gen", "llm-judge"]
+}

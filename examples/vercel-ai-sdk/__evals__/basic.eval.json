@@ -1,0 +1,8 @@
+{
+  "id": "basic-math",
+  "name": "Basic Math",
+  "description": "Test basic agent response",
+  "category": "basic",
+  "prompt": "What is 2 + 2? Answer with just the number.",
+  "judges": []
+}

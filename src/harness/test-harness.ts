@@ -98,6 +98,26 @@ export class TestHarness {
         }
       }
 
+      // Extract tool calls from steps for vercel-ai type
+      if (this.config.agentType === 'vercel-ai') {
+        const stepsToolCalls = await this.extractToolCallsFromVercelAISteps(workspace.path);
+        if (stepsToolCalls.length > 0) {
+          this.verbose(`[${evalCase.id}] Found ${stepsToolCalls.length} tool calls from steps`);
+          result.toolCalls = result.toolCalls || [];
+          for (const call of stepsToolCalls) {
+            if (
+              !result.toolCalls.some(
+                (t) =>
+                  t.toolName === call.toolName &&
+                  JSON.stringify(t.input) === JSON.stringify(call.input)
+              )
+            ) {
+              result.toolCalls.push(call);
+            }
+          }
+        }
+      }
+
       const executionResult = agentResultToExecutionResult(result);
       executionResult.duration = result.duration ?? Date.now() - startTime;
       executionResult.workingDirectory = workspace.path;
@@ -117,6 +137,8 @@ export class TestHarness {
         extractedToolCalls = await this.extractToolCallsFromJsonl(workspace.path);
       } else if (this.config.agentType === 'openai-agents') {
         extractedToolCalls = await this.extractToolCallsFromOpenAITraces(workspace.path);
+      } else if (this.config.agentType === 'vercel-ai') {
+        extractedToolCalls = await this.extractToolCallsFromVercelAISteps(workspace.path);
       }
 
       // On error, cleanup immediately
@@ -206,6 +228,26 @@ export class TestHarness {
           }
         }
 
+        // Extract tool calls from steps for vercel-ai type
+        if (this.config.agentType === 'vercel-ai') {
+          const stepsToolCalls = await this.extractToolCallsFromVercelAISteps(workspace.path);
+          if (stepsToolCalls.length > 0) {
+            this.verbose(`[${evalCase.id}] Found ${stepsToolCalls.length} tool calls from steps`);
+            result.toolCalls = result.toolCalls || [];
+            for (const call of stepsToolCalls) {
+              if (
+                !result.toolCalls.some(
+                  (t) =>
+                    t.toolName === call.toolName &&
+                    JSON.stringify(t.input) === JSON.stringify(call.input)
+                )
+              ) {
+                result.toolCalls.push(call);
+              }
+            }
+          }
+        }
+
         const executionResult = agentResultToExecutionResult(result);
         executionResult.duration = result.duration ?? Date.now() - startTime;
         executionResult.workingDirectory = workspace.path;
@@ -234,6 +276,8 @@ export class TestHarness {
         extractedToolCalls = await this.extractToolCallsFromJsonl(workspace.path);
       } else if (this.config.agentType === 'openai-agents') {
         extractedToolCalls = await this.extractToolCallsFromOpenAITraces(workspace.path);
+      } else if (this.config.agentType === 'vercel-ai') {
+        extractedToolCalls = await this.extractToolCallsFromVercelAISteps(workspace.path);
       }
 
       // On error, cleanup immediately
@@ -497,6 +541,85 @@ export class TestHarness {
 
           // Extract handoffs as special tool calls
           if (entry.type === 'span' && entry.span_type === 'handoff') {
+            toolCalls.push({
+              toolName: 'Handoff',
+              input: {
+                agent: entry.to_agent,
+                fromAgent: entry.from_agent,
+              },
+            });
+          }
+        } catch {
+          // Skip invalid lines
+        }
+      }
+    } catch {
+      // Ignore errors
+    }
+
+    return toolCalls;
+  }
+
+  private async extractToolCallsFromVercelAISteps(workspacePath: string): Promise<ToolCall[]> {
+    const toolCalls: ToolCall[] = [];
+
+    try {
+      const stepsPath = path.join(workspacePath, '.vercel-ai', 'steps.jsonl');
+      try {
+        await fs.access(stepsPath);
+      } catch {
+        return toolCalls;
+      }
+
+      const content = await fs.readFile(stepsPath, 'utf-8');
+      const lines = content.split('\n').filter((line) => line.trim());
+
+      for (const line of lines) {
+        try {
+          const entry = JSON.parse(line);
+
+          if (entry.type === 'step' && entry.tool_name) {
+            let input: unknown;
+            try {
+              input =
+                typeof entry.tool_input === 'string'
+                  ? JSON.parse(entry.tool_input)
+                  : entry.tool_input;
+            } catch {
+              input = entry.tool_input;
+            }
+
+            let output: unknown;
+            if (entry.tool_output) {
+              try {
+                output =
+                  typeof entry.tool_output === 'string'
+                    ? JSON.parse(entry.tool_output)
+                    : entry.tool_output;
+              } catch {
+                output = entry.tool_output;
+              }
+            }
+
+            const existingCall = toolCalls.find(
+              (tc) =>
+                tc.toolName === entry.tool_name &&
+                JSON.stringify(tc.input) === JSON.stringify(input)
+            );
+
+            if (existingCall && output) {
+              existingCall.output = output;
+            } else if (!existingCall) {
+              toolCalls.push({
+                toolName: entry.tool_name,
+                input,
+                output,
+              });
+            }
+          }
+
+          // Extract handoffs as special tool calls
+          if (entry.type === 'handoff' && entry.to_agent) {
             toolCalls.push({
               toolName: 'Handoff',
               input: {

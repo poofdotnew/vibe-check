@@ -9,6 +9,7 @@ export default defineConfig({
     'learning/index': 'src/learning/index.ts',
     'adapters/index': 'src/adapters/index.ts',
     'openai/index': 'src/openai/index.ts',
+    'vercel-ai/index': 'src/vercel-ai/index.ts',
   },
   format: ['esm'],
   dts: {
@@ -17,11 +18,12 @@ export default defineConfig({
       'judges/index': 'src/judges/index.ts',
       'adapters/index': 'src/adapters/index.ts',
       'openai/index': 'src/openai/index.ts',
+      'vercel-ai/index': 'src/vercel-ai/index.ts',
     },
   },
   sourcemap: true,
   clean: true,
   splitting: false,
   treeshake: true,
-  external: ['@anthropic-ai/sdk', '@anthropic-ai/claude-agent-sdk', '@openai/agents'],
+  external: ['@anthropic-ai/sdk', '@anthropic-ai/claude-agent-sdk', '@openai/agents', 'ai'],
 });

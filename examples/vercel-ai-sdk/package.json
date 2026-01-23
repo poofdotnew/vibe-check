@@ -1,0 +1,12 @@
+{
+  "name": "vibe-check-vercel-ai-sdk-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "vibe-check": "vibe-check"
+  },
+  "dependencies": {
+    "ai": "^4.0.0",
+    "@ai-sdk/openai": "^1.0.0"
+  }
+}
