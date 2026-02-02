@@ -1,0 +1,11 @@
+{
+  "id": "skill-invocation-subagent-test",
+  "name": "Skill Invocation in Subagent Test",
+  "description": "Verify skill invocations are detected when called from subagents (JSONL files in subagents/ subdirectory)",
+  "category": "tool",
+  "prompt": "Use the coding subagent to run the /test skill. Route this to the coding agent using the Task tool, and have it invoke the test skill.",
+  "expectedToolCalls": [{ "toolName": "Task", "minCalls": 1 }],
+  "expectedSkills": [{ "skillName": "test", "minCalls": 1 }],
+  "judges": ["tool-invocation", "skill-invocation"],
+  "tags": ["skills", "subagents", "testing"]
+}

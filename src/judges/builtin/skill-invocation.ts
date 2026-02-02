@@ -29,15 +29,15 @@ export class SkillInvocationJudge extends BaseJudge {
     }
 
     const jsonlSkillCalls = await this.extractSkillCallsFromJsonl(workingDirectory);
-    const mainAgentSkillCalls = this.extractSkillCallsFromToolCalls(executionResult.toolCalls || []);
+    const mainAgentSkillCalls = this.extractSkillCallsFromToolCalls(
+      executionResult.toolCalls || []
+    );
     const skillCalls = [...jsonlSkillCalls, ...mainAgentSkillCalls];
 
     const results: SkillCheckResult[] = [];
 
     for (const expected of expectedSkills) {
-      const matchCount = skillCalls.filter(
-        (call) => call.skillName === expected.skillName
-      ).length;
+      const matchCount = skillCalls.filter((call) => call.skillName === expected.skillName).length;
 
       const meetsMin = matchCount >= (expected.minCalls ?? 1);
 
@@ -71,13 +71,15 @@ export class SkillInvocationJudge extends BaseJudge {
     });
   }
 
-  private extractSkillCallsFromToolCalls(toolCalls: Array<{ toolName: string; input: unknown }>): Array<{ skillName: string; input: unknown }> {
+  private extractSkillCallsFromToolCalls(
+    toolCalls: Array<{ toolName: string; input: unknown }>
+  ): Array<{ skillName: string; input: unknown }> {
     const skillCalls: Array<{ skillName: string; input: unknown }> = [];
 
     for (const call of toolCalls) {
       if (call.toolName === 'Skill') {
         const input = call.input as Record<string, unknown> | undefined;
-        const skillName = input?.skill as string || input?.command as string;
+        const skillName = (input?.skill as string) || (input?.command as string);
         if (skillName) {
           skillCalls.push({
             skillName: skillName.replace(/^\//, ''),
@@ -90,7 +92,9 @@ export class SkillInvocationJudge extends BaseJudge {
     return skillCalls;
   }
 
-  private async extractSkillCallsFromJsonl(workspacePath: string): Promise<Array<{ skillName: string; input: unknown }>> {
+  private async extractSkillCallsFromJsonl(
+    workspacePath: string
+  ): Promise<Array<{ skillName: string; input: unknown }>> {
     const skillCalls: Array<{ skillName: string; input: unknown }> = [];
 
     try {
@@ -110,13 +114,11 @@ export class SkillInvocationJudge extends BaseJudge {
 
         if (!stat.isDirectory()) continue;
 
-        const files = await fs.readdir(projectPath);
-        const jsonlFiles = files.filter(f => f.endsWith('.jsonl'));
+        const jsonlFiles = await this.findJsonlFilesRecursive(projectPath);
 
-        for (const jsonlFile of jsonlFiles) {
-          const filePath = path.join(projectPath, jsonlFile);
+        for (const filePath of jsonlFiles) {
           const content = await fs.readFile(filePath, 'utf-8');
-          const lines = content.split('\n').filter(line => line.trim());
+          const lines = content.split('\n').filter((line) => line.trim());
 
           for (const line of lines) {
             try {
@@ -128,7 +130,7 @@ export class SkillInvocationJudge extends BaseJudge {
               for (const block of message.content) {
                 if (block.type === 'tool_use' && block.name === 'Skill') {
                   const input = block.input as Record<string, unknown> | undefined;
-                  const skillName = input?.skill as string || input?.command as string;
+                  const skillName = (input?.skill as string) || (input?.command as string);
                   if (skillName) {
                     skillCalls.push({
                       skillName: skillName.replace(/^\//, ''),
@@ -148,5 +150,28 @@ export class SkillInvocationJudge extends BaseJudge {
     }
 
     return skillCalls;
+  }
+
+  private async findJsonlFilesRecursive(dir: string): Promise<string[]> {
+    const jsonlFiles: string[] = [];
+
+    try {
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+
+        if (entry.isDirectory()) {
+          const nestedFiles = await this.findJsonlFilesRecursive(fullPath);
+          jsonlFiles.push(...nestedFiles);
+        } else if (entry.name.endsWith('.jsonl')) {
+          jsonlFiles.push(fullPath);
+        }
+      }
+    } catch {
+      // Ignore errors for inaccessible directories
+    }
+
+    return jsonlFiles;
   }
 }

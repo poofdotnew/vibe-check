@@ -64,7 +64,11 @@ async function createClaudeAgentSdkAgent(
           }
         }
 
-        if (message.type === 'user' && 'tool_use_result' in message && message.tool_use_result !== undefined) {
+        if (
+          message.type === 'user' &&
+          'tool_use_result' in message &&
+          message.tool_use_result !== undefined
+        ) {
           const lastCall = toolCalls[toolCalls.length - 1];
           if (lastCall) {
             lastCall.output = message.tool_use_result;
@@ -205,9 +209,9 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK', () => {
       expect(result.total).toBe(2);
       expect(result.passed).toBe(2);
 
-      const outputs = result.results.map(r => r.output.toLowerCase());
-      expect(outputs.some(o => o.includes('hello'))).toBe(true);
-      expect(outputs.some(o => o.includes('world'))).toBe(true);
+      const outputs = result.results.map((r) => r.output.toLowerCase());
+      expect(outputs.some((o) => o.includes('hello'))).toBe(true);
+      expect(outputs.some((o) => o.includes('world'))).toBe(true);
     }, 120000);
   });
 
@@ -225,7 +229,8 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK', () => {
           name: 'Read File Test',
           description: 'Test file reading with SDK',
           category: 'tool',
-          prompt: 'Read the file test-file.txt in the current directory and tell me what it contains.',
+          prompt:
+            'Read the file test-file.txt in the current directory and tell me what it contains.',
           expectedToolCalls: [{ toolName: 'Read', minCalls: 1 }],
           judges: ['tool-invocation'],
         })
@@ -251,7 +256,7 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK', () => {
       expect(result.total).toBe(1);
       expect(result.results[0].toolCalls).toBeDefined();
       expect(result.results[0].toolCalls!.length).toBeGreaterThan(0);
-      expect(result.results[0].toolCalls!.some(tc => tc.toolName === 'Read')).toBe(true);
+      expect(result.results[0].toolCalls!.some((tc) => tc.toolName === 'Read')).toBe(true);
     }, 90000);
 
     test('validates glob tool usage', async () => {
@@ -290,7 +295,7 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK', () => {
       const result = await runner.run();
 
       expect(result.total).toBe(1);
-      expect(result.results[0].toolCalls!.some(tc => tc.toolName === 'Glob')).toBe(true);
+      expect(result.results[0].toolCalls!.some((tc) => tc.toolName === 'Glob')).toBe(true);
     }, 90000);
   });
 
@@ -328,7 +333,7 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK', () => {
       const result = await runner.run();
 
       expect(result.total).toBe(1);
-      expect(result.results[0].toolCalls!.some(tc => tc.toolName === 'Write')).toBe(true);
+      expect(result.results[0].toolCalls!.some((tc) => tc.toolName === 'Write')).toBe(true);
     }, 120000);
 
     test('edits existing files', async () => {
@@ -384,7 +389,8 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK', () => {
           name: 'Timeout Test',
           description: 'Test timeout handling',
           category: 'basic',
-          prompt: 'Write a very long essay about the history of computing from 1800 to present day with detailed analysis of each decade.',
+          prompt:
+            'Write a very long essay about the history of computing from 1800 to present day with detailed analysis of each decade.',
           judges: [],
         })
       );
@@ -486,6 +492,140 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK', () => {
   });
 });
 
+describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK with Subagents and Skills', () => {
+  let testDir: string;
+  let evalsDir: string;
+  let workspaceDir: string;
+
+  beforeEach(async () => {
+    resetJudgeRegistry();
+    testDir = path.join(os.tmpdir(), `integ-sdk-subagent-${Date.now()}`);
+    evalsDir = path.join(testDir, '__evals__');
+    workspaceDir = path.join(testDir, 'workspace');
+    await fs.mkdir(evalsDir, { recursive: true });
+    await fs.mkdir(workspaceDir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await fs.rm(testDir, { recursive: true, force: true });
+  });
+
+  async function createAgentWithSubagentsAndSkills(): Promise<
+    (prompt: string, context: AgentContext) => Promise<AgentResult>
+  > {
+    const { query } = await import('@anthropic-ai/claude-agent-sdk');
+
+    const subagents = {
+      coding: {
+        description: 'Coding agent for programming tasks',
+        prompt: 'You are a coding assistant.',
+        tools: ['Read', 'Write', 'Bash', 'Skill'],
+        model: 'sonnet' as const,
+      },
+    };
+
+    const skills = {
+      test: {
+        description: 'Run tests',
+        prompt: 'Run tests using bun test or npm test.',
+      },
+    };
+
+    return async (prompt: string, context: AgentContext): Promise<AgentResult> => {
+      const toolCalls: ToolCall[] = [];
+      let output = '';
+      let success = false;
+      const startTime = Date.now();
+
+      try {
+        for await (const message of query({
+          prompt,
+          options: {
+            cwd: context.workingDirectory || workspaceDir,
+            allowedTools: ['Read', 'Task', 'Skill'],
+            agents: subagents,
+            skills,
+            env: {
+              ...process.env,
+              CLAUDE_CONFIG_DIR: `${context.workingDirectory}/.claude`,
+            },
+          },
+        })) {
+          if (message.type === 'assistant' && message.message?.content) {
+            for (const block of message.message.content) {
+              if (block.type === 'tool_use') {
+                toolCalls.push({
+                  toolName: block.name,
+                  input: block.input,
+                });
+              }
+            }
+          }
+
+          if (message.type === 'result') {
+            if (message.subtype === 'success') {
+              output = message.result || '';
+              success = true;
+            } else {
+              success = false;
+              output = message.errors?.join('\n') || 'Unknown error';
+            }
+          }
+        }
+
+        return {
+          output,
+          success,
+          toolCalls,
+          duration: Date.now() - startTime,
+        };
+      } catch (error) {
+        return {
+          output: '',
+          success: false,
+          error: error instanceof Error ? error : new Error(String(error)),
+          toolCalls,
+          duration: Date.now() - startTime,
+        };
+      }
+    };
+  }
+
+  test('detects skill invocations from subagent JSONL files', async () => {
+    await fs.writeFile(
+      path.join(evalsDir, 'subagent-skill.eval.json'),
+      JSON.stringify({
+        id: 'subagent-skill-test',
+        name: 'Subagent Skill Test',
+        description: 'Test skill detection from subagent logs',
+        category: 'tool',
+        prompt: 'Use the coding subagent via the Task tool to run the /test skill.',
+        expectedToolCalls: [{ toolName: 'Task', minCalls: 1 }],
+        expectedSkills: [{ skillName: 'test', minCalls: 1 }],
+        judges: ['tool-invocation', 'skill-invocation'],
+      })
+    );
+
+    const agent = await createAgentWithSubagentsAndSkills();
+
+    const config = createResolvedConfig({
+      testDir: evalsDir,
+      agent,
+      agentType: 'claude-code',
+      maxRetries: 1,
+      parallel: false,
+      timeout: 120000,
+      preserveWorkspaces: true,
+    });
+
+    const runner = new EvalRunner(config);
+    const result = await runner.run();
+
+    expect(result.total).toBe(1);
+    expect(result.results[0].toolCalls!.some((tc) => tc.toolName === 'Task')).toBe(true);
+  }, 180000);
+});
+
 describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK with Bash', () => {
   let testDir: string;
   let evalsDir: string;
@@ -536,7 +676,7 @@ describe.skipIf(!hasApiKey)('Integration: Claude Agent SDK with Bash', () => {
     const result = await runner.run();
 
     expect(result.total).toBe(1);
-    expect(result.results[0].toolCalls!.some(tc => tc.toolName === 'Bash')).toBe(true);
+    expect(result.results[0].toolCalls!.some((tc) => tc.toolName === 'Bash')).toBe(true);
     expect(result.results[0].output.toLowerCase()).toContain('hello');
   }, 90000);
 });
