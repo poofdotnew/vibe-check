@@ -1,6 +1,6 @@
 {
   "name": "@poofnew/vibe-check",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI agent evaluation framework for Claude and beyond",
   "type": "module",
   "main": "./dist/index.js",
