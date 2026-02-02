@@ -3,6 +3,8 @@ import chalk from 'chalk';
 import { loadConfig } from '../config/config-loader.js';
 import { EvalRunner } from '../runner/eval-runner.js';
 import type { EvalCategory } from '../config/schemas.js';
+import { printSummary } from '../utils/reporter.js';
+import { saveRunToHistory, getLastRun } from '../utils/history.js';
 
 const program = new Command();
 
@@ -36,8 +38,10 @@ program
         ids: options.id,
       });
 
-      console.log();
-      printSummary(result);
+      const previousRun = await getLastRun(config.testDir);
+      await saveRunToHistory(result, config.testDir);
+
+      printSummary(result, { verbose: options.verbose, previousRun });
 
       process.exit(result.failed + result.errors > 0 ? 1 : 0);
     } catch (error) {
@@ -229,45 +233,6 @@ learn
       process.exit(1);
     }
   });
-
-function printSummary(result: import('../runner/eval-runner.js').EvalSuiteResult): void {
-  const { total, passed, failed, errors, passRate, duration } = result;
-
-  console.log(chalk.bold('Results:'));
-  console.log(`  Total:  ${total}`);
-  console.log(`  ${chalk.green('Passed:')} ${passed}`);
-
-  if (failed > 0) {
-    console.log(`  ${chalk.red('Failed:')} ${failed}`);
-  }
-
-  if (errors > 0) {
-    console.log(`  ${chalk.yellow('Errors:')} ${errors}`);
-  }
-
-  console.log();
-  console.log(`  Pass rate: ${chalk.bold((passRate * 100).toFixed(1) + '%')}`);
-  console.log(`  Duration:  ${(duration / 1000).toFixed(2)}s`);
-
-  if (result.results.length > 0 && (failed > 0 || errors > 0)) {
-    console.log();
-    console.log(chalk.bold('Failed cases:'));
-
-    for (const r of result.results) {
-      if (!r.success) {
-        console.log(`  ${chalk.red('✗')} ${r.evalCase.name}`);
-        if (r.error) {
-          console.log(`    ${chalk.gray(r.error.message)}`);
-        }
-        for (const judge of r.judgeResults) {
-          if (!judge.passed) {
-            console.log(`    ${chalk.gray(`[${judge.judgeId}] ${judge.reasoning}`)}`);
-          }
-        }
-      }
-    }
-  }
-}
 
 // Handle graceful shutdown signals
 let shuttingDown = false;

@@ -1,4 +1,7 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test, beforeEach, afterEach } from 'bun:test';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import * as os from 'os';
 import { SkillInvocationJudge } from '../../judges/builtin/skill-invocation.js';
 import type { JudgeContext, ExecutionResult } from '../../judges/judge-interface.js';
 import type { ToolEvalCase, BasicEvalCase } from '../../config/schemas.js';
@@ -74,9 +77,7 @@ describe('SkillInvocationJudge', () => {
       enabled: true,
     };
 
-    const toolCalls = [
-      { toolName: 'Skill', input: { skill: 'commit', args: '-m "test"' } },
-    ];
+    const toolCalls = [{ toolName: 'Skill', input: { skill: 'commit', args: '-m "test"' } }];
 
     const result = await judge.evaluate(createContext(toolEval, toolCalls));
 
@@ -117,9 +118,7 @@ describe('SkillInvocationJudge', () => {
       enabled: true,
     };
 
-    const toolCalls = [
-      { toolName: 'Skill', input: { skill: 'commit' } },
-    ];
+    const toolCalls = [{ toolName: 'Skill', input: { skill: 'commit' } }];
 
     const result = await judge.evaluate(createContext(toolEval, toolCalls));
 
@@ -170,9 +169,7 @@ describe('SkillInvocationJudge', () => {
       enabled: true,
     };
 
-    const toolCalls = [
-      { toolName: 'Skill', input: { skill: 'commit' } },
-    ];
+    const toolCalls = [{ toolName: 'Skill', input: { skill: 'commit' } }];
 
     const result = await judge.evaluate(createContext(toolEval, toolCalls));
 
@@ -193,9 +190,7 @@ describe('SkillInvocationJudge', () => {
       enabled: true,
     };
 
-    const toolCalls = [
-      { toolName: 'Skill', input: { skill: '/commit' } },
-    ];
+    const toolCalls = [{ toolName: 'Skill', input: { skill: '/commit' } }];
 
     const result = await judge.evaluate(createContext(toolEval, toolCalls));
 
@@ -216,9 +211,7 @@ describe('SkillInvocationJudge', () => {
       enabled: true,
     };
 
-    const toolCalls = [
-      { toolName: 'Skill', input: { command: 'commit' } },
-    ];
+    const toolCalls = [{ toolName: 'Skill', input: { command: 'commit' } }];
 
     const result = await judge.evaluate(createContext(toolEval, toolCalls));
 
@@ -263,12 +256,164 @@ describe('SkillInvocationJudge', () => {
       enabled: true,
     };
 
-    const toolCalls = [
-      { toolName: 'Skill', input: { skill: 'commit' } },
-    ];
+    const toolCalls = [{ toolName: 'Skill', input: { skill: 'commit' } }];
 
     const result = await judge.evaluate(createContext(toolEval, toolCalls));
 
     expect(result.passed).toBe(true);
+  });
+
+  describe('JSONL reading from subdirectories', () => {
+    let tempDir: string;
+
+    beforeEach(async () => {
+      tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'skill-judge-test-'));
+    });
+
+    afterEach(async () => {
+      await fs.rm(tempDir, { recursive: true, force: true });
+    });
+
+    const createContextWithDir = (
+      evalCase: ToolEvalCase,
+      workingDirectory: string,
+      toolCalls: ExecutionResult['toolCalls'] = []
+    ): JudgeContext => ({
+      evalCase,
+      executionResult: {
+        success: true,
+        output: '',
+        toolCalls,
+        duration: 0,
+      },
+      workingDirectory,
+    });
+
+    test('reads skill calls from subagent JSONL files in subdirectories', async () => {
+      const projectPath = path.join(tempDir, '.claude', 'projects', 'test-project');
+      const subagentsPath = path.join(projectPath, 'subagents');
+      await fs.mkdir(subagentsPath, { recursive: true });
+
+      const jsonlContent = JSON.stringify({
+        type: 'assistant',
+        message: {
+          content: [
+            {
+              type: 'tool_use',
+              name: 'Skill',
+              input: { skill: 'test' },
+            },
+          ],
+        },
+      });
+
+      await fs.writeFile(path.join(subagentsPath, 'agent-123.jsonl'), jsonlContent);
+
+      const toolEval: ToolEvalCase = {
+        id: 't1',
+        name: 'Tool',
+        description: 'd',
+        category: 'tool',
+        prompt: 'p',
+        expectedToolCalls: [],
+        expectedSkills: [{ skillName: 'test', minCalls: 1 }],
+        judges: [],
+        enabled: true,
+      };
+
+      const result = await judge.evaluate(createContextWithDir(toolEval, tempDir));
+
+      expect(result.passed).toBe(true);
+      expect(result.score).toBe(100);
+      expect(result.details?.totalSkillCalls).toBe(1);
+    });
+
+    test('reads skill calls from deeply nested subdirectories', async () => {
+      const deepPath = path.join(
+        tempDir,
+        '.claude',
+        'projects',
+        'test-project',
+        'subagents',
+        'nested',
+        'deep'
+      );
+      await fs.mkdir(deepPath, { recursive: true });
+
+      const jsonlContent = JSON.stringify({
+        type: 'assistant',
+        message: {
+          content: [
+            {
+              type: 'tool_use',
+              name: 'Skill',
+              input: { skill: 'format' },
+            },
+          ],
+        },
+      });
+
+      await fs.writeFile(path.join(deepPath, 'agent-456.jsonl'), jsonlContent);
+
+      const toolEval: ToolEvalCase = {
+        id: 't1',
+        name: 'Tool',
+        description: 'd',
+        category: 'tool',
+        prompt: 'p',
+        expectedToolCalls: [],
+        expectedSkills: [{ skillName: 'format', minCalls: 1 }],
+        judges: [],
+        enabled: true,
+      };
+
+      const result = await judge.evaluate(createContextWithDir(toolEval, tempDir));
+
+      expect(result.passed).toBe(true);
+      expect(result.score).toBe(100);
+    });
+
+    test('combines skill calls from multiple subdirectories', async () => {
+      const projectPath = path.join(tempDir, '.claude', 'projects', 'test-project');
+      const subagentsPath = path.join(projectPath, 'subagents');
+      await fs.mkdir(subagentsPath, { recursive: true });
+
+      const jsonl1 = JSON.stringify({
+        type: 'assistant',
+        message: {
+          content: [{ type: 'tool_use', name: 'Skill', input: { skill: 'test' } }],
+        },
+      });
+      const jsonl2 = JSON.stringify({
+        type: 'assistant',
+        message: {
+          content: [{ type: 'tool_use', name: 'Skill', input: { skill: 'format' } }],
+        },
+      });
+
+      await fs.writeFile(path.join(projectPath, 'main.jsonl'), jsonl1);
+      await fs.writeFile(path.join(subagentsPath, 'agent-789.jsonl'), jsonl2);
+
+      const toolEval: ToolEvalCase = {
+        id: 't1',
+        name: 'Tool',
+        description: 'd',
+        category: 'tool',
+        prompt: 'p',
+        expectedToolCalls: [],
+        expectedSkills: [
+          { skillName: 'test', minCalls: 1 },
+          { skillName: 'format', minCalls: 1 },
+        ],
+        judges: [],
+        enabled: true,
+      };
+
+      const result = await judge.evaluate(createContextWithDir(toolEval, tempDir));
+
+      expect(result.passed).toBe(true);
+      expect(result.score).toBe(100);
+      expect(result.details?.totalSkillCalls).toBe(2);
+    });
   });
 });

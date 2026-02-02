@@ -13,7 +13,7 @@ const subagents = {
     description:
       'Expert coding agent for writing, creating, and implementing code. Use for all programming tasks.',
     prompt: `You are an expert software engineer. Write clean, well-structured code with proper types and error handling.`,
-    tools: ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash'],
+    tools: ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash', 'Skill'],
     model: 'sonnet' as const,
   },
   research: {
